@@ -5,7 +5,7 @@ use NewdichMiddleware\Index;
 use NewdichApp\Query\CheckPaid;
 
 $middle = new Index();
-$incoming = $_POST;
+$incoming = $_GET;
 $extractedData = [];
 foreach($incoming as $key => $value){
     $extractedData[$key] = $middle->cleanData($value);

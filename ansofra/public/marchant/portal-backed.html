@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newdich Local Area Network</title>
+    <link rel="stylesheet" href="/newdichlan/ansofra/public/marchant/css/style.css">
+</head>
+<body>
+
+<header class="portal-header">
+    <div class="container">
+        <h1>Welcome to <span>Newdich LAN</span></h1>
+        <p>Choose a plan to get online</p>
+    </div>
+</header>
+
+<main class="portal-main">
+    <div class="container">
+        <div id="plan-list"></div>
+        <div id="payment-screen"></div>
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <p>Powered by NEWDICH TECHNOLOGY</p>
+        <p>&copy; <span id="year"></span> Newdich Technology</p>
+    </div>
+</footer>
+
+<script>
+
+document.getElementById("year").innerText = new Date().getFullYear();
+
+const BASE = "http://192.168.200.1:8080/newdichlan/ansofra/api";
+
+init();
+
+async function init() {
+    await loadPlans();
+}
+
+// 🔹 Load plans
+async function loadPlans() {
+    try {
+        let res = await fetch(`${BASE}/getplans`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        let data = await res.json();
+
+        if (data.status !== "success") {
+            alert(data.response);
+            return;
+        }
+
+        let output = `
+            <form id="pay_form">
+                <select id="plans_id">
+        `;
+
+        data.response.forEach(plan => {
+            output += `
+                <option value="${plan.plans_id}">
+                    ${plan.plan} - ${plan.currency} ${plan.price}
+                </option>
+            `;
+        });
+
+        output += `
+                </select><br/><br/>
+                <button type="submit">Pay</button>
+            </form>
+        `;
+
+        document.getElementById("plan-list").innerHTML = output;
+
+        document.getElementById("pay_form").addEventListener("submit", pay);
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load plans");
+    }
+}
+
+// 🔹 Main Pay Logic
+async function pay(e) {
+    e.preventDefault();
+
+    const params = Object.fromEntries(new URL(window.location.href).searchParams.entries());
+
+    const mac = params.mac;
+    const ip = params.ip;
+    const device = params.device;
+    const current_time = params.current_time;
+
+    const plans_id = document.getElementById("plans_id").value;
+
+    const body = {
+        mac,
+        last_ip: ip,
+        device_name: device,
+        date_created: current_time,
+        current_time,
+        phone: ""
+    };
+
+    let stored = getStoredDevice();
+
+    if (stored && stored.mac === mac) {
+        return renderPlanWithAccounts(plans_id, stored.accounts);
+    }
+
+    // Register or fetch
+    let accounts = await registerOrFetch(mac, body);
+
+    if (!accounts) return;
+
+    saveDevice(mac, accounts);
+
+    return renderPlanWithAccounts(plans_id, accounts);
+}
+
+// 🔹 Register or fetch accounts
+async function registerOrFetch(mac, body) {
+    try {
+        let res = await fetch(`${BASE}/register`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        let data = await res.json();
+
+        if (data.status === "success") {
+            return data.response;
+        }
+
+        // fallback to getreserved
+        let login = await fetch(`${BASE}/getreserved`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mac })
+        });
+
+        let loginData = await login.json();
+
+        if (loginData.status === "success") {
+            return loginData.response;
+        }
+
+        alert(loginData.response);
+        return null;
+
+    } catch (err) {
+        console.error(err);
+        alert("Network error");
+        return null;
+    }
+}
+
+// 🔹 Render plan + accounts
+async function renderPlanWithAccounts(plans_id, accounts) {
+    try {
+        let res = await fetch(`${BASE}/geteachplans`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plans_id })
+        });
+
+        let data = await res.json();
+
+        if (data.status !== "success") {
+            alert(data.response);
+            return;
+        }
+
+        let plan = data.response[0];
+
+        let price = (plan.discount && plan.price >= plan.discount)
+            ? parseFloat(plan.price) - parseFloat(plan.discount)
+            : plan.price;
+
+        let accountHTML = accounts.map(acc => `
+            <div>
+                <p><strong>${acc.bank.name}</strong></p>
+                <p>${acc.account_number}</p>
+                <p>${acc.account_name}</p>
+                <hr/>
+            </div>
+        `).join("");
+
+        let output = `
+            <div>
+                <h3>${plan.plan}</h3>
+                <p><strong>${plan.currency} ${price}</strong></p>
+                <p>Make payment into any account below:</p>
+                ${accountHTML}
+            </div>
+        `;
+
+        document.getElementById("payment-screen").innerHTML = output;
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load plan");
+    }
+}
+
+// 🔹 LocalStorage helpers
+function getStoredDevice() {
+    try {
+        let data = localStorage.getItem("devicedata");
+        return data ? JSON.parse(data) : null;
+    } catch {
+        localStorage.removeItem("devicedata");
+        return null;
+    }
+}
+
+function saveDevice(mac, accounts) {
+    localStorage.setItem("devicedata", JSON.stringify({ mac, accounts }));
+}
+
+</script>
+
+</body>
+</html>

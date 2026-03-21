@@ -7,6 +7,7 @@ use NewdichSchema\Platform;
 class GetPlans{
     private $dto;
     private $table = Platform::PLANS_TABLE;
+    private $marchant_code ="";
 
     public function __construct(AnsofraDto $dto){
         $this->dto = $dto;
@@ -14,7 +15,7 @@ class GetPlans{
 
     public function process(){
         $dataToCheck = [
-            "marchant_code"=>$this->dto->marchant_code
+            "marchant_code"=>$this->marchant_code
         ];
 
         $newMigration = new Migration(null, $this->table);

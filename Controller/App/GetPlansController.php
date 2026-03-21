@@ -4,6 +4,8 @@ use NewdichDto\AnsofraDto;
 use NewdichMiddleware\Index;
 use NewdichApp\Query\GetPlans;
 
+header('Content-Type: application/json'); 
+
 $incoming = json_decode(file_get_contents("php://input"), true);
 $cleanData = [];
 $newMiddleware = new Index();

@@ -1,19 +1,26 @@
 <?php
 namespace NewdichApp\Command;
+
 use NewdichDto\AnsofraDto;
 use NewdichSchema\Migration;
 use NewdichSchema\Platform;
+use NewdichSchema\Settings;
 
-class AddPlans{
+class AddPlans {
+
     private $dto;
     private $table = Platform::PLANS_TABLE;
-
-    public function __construct(AnsofraDto $dto){
+    private $marchant_code = Settings::MARCHANT_CODE;
+    public function __construct(AnsofraDto $dto = null) {
         $this->dto = $dto;
     }
 
-    public function process(){
-        // Initialize cURL
+    public function process() {
+
+        $data =[
+            "marchant_code" => $this->marchant_code
+        ];
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => "https://lan.newdich.tech/api/getplans",
@@ -22,64 +29,71 @@ class AddPlans{
             CURLOPT_HTTPHEADER => [
                 "Content-Type: application/json"
             ],
-            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_POSTFIELDS => json_encode($data), 
         ]);
-        
+
         $response = curl_exec($ch);
         $err = curl_error($ch);
+
         curl_close($ch);
+
         if ($err) {
             return json_encode([
-                "status"=>"failed",
-                "response"=>"Error: " . $err
-            ], JSON_PRETTY_PRINT);
-        } else {
-            $responseDec = json_decode($response, true);
-            if($responseDec["status"] ==="success"){
+                "status" => "failed",
+                "response" => "Error: " . $err
+            ]);
+        }
 
-                $newMigration = new Migration(null, $this->table);
-                $res = $responseDec["response"];
-                for($i=0; $i < count($res); $i++){
-                    //firstly check if the plan exist, if it exists update
-                    $existplan = [
-                        "plan"=> $res[$i]["plan"],
-                        "marchant_code" => $res[$i]["marchant_code"]
-                    ];
-                    
-                    $check = $newMigration->get($existplan, 0, 1);
-                    $checkDec = json_decode($check, true);
-                    if($checkDec["status"] ==="success"){
-                        $updateData = [
-                            "duration" => $res[$i]["duration"],
-                            "quantity" => $res[$i]["quantity"],
-                            "price" => $res[$i]["price"],
-                            "currency" => $res[$i]["currency"],
-                            "discount" => $res[$i]["discount"]
-                        ];
-                        
-                        $edit = $newMigration->edit($updateData, $existplan);
-                    }
-                    else{
-                        $dataToSave = [
-                            "plan"=> $res[$i]["plan"],
-                            "duration" => $res[$i]["duration"],
-                            "quantity" => $res[$i]["quantity"],
-                            "price" => $res[$i]["price"],
-                            "currency" => $res[$i]["currency"],
-                            "discount" => $res[$i]["discount"],
-                            "marchant_code" => $res[$i]["marchant_code"]
-                        ];
+        $responseDec = json_decode($response, true);
 
-                        $uniqueCol ="plan";
-                        $uniqueVal = $res[$i]["plan"];
-                        $save = $newMigration->saveUnique($uniqueCol, $uniqueVal, $dataToSave);
-                    }
-                }
-            }
-            else{
-                return $response;
+        if ($responseDec["status"] !== "success") {
+            return $response;
+        }
+
+        $newMigration = new Migration(null, $this->table);
+        $res = $responseDec["response"];
+
+        foreach ($res as $plan) {
+
+            $existplan = [
+                "plan" => $plan["plan"],
+                "merchant_code" => $plan["merchant_code"]
+            ];
+
+            $check = $newMigration->get($existplan, 0, 1);
+            $checkDec = json_decode($check, true);
+
+            if ($checkDec["status"] === "success") {
+
+                $updateData = [
+                    "duration" => $plan["duration"],
+                    "quantity" => $plan["quantity"],
+                    "price" => $plan["price"],
+                    "currency" => $plan["currency"],
+                    "discount" => $plan["discount"]
+                ];
+
+                $newMigration->edit($updateData, $existplan);
+
+            } else {
+
+                $dataToSave = [
+                    "plan" => $plan["plan"],
+                    "duration" => $plan["duration"],
+                    "quantity" => $plan["quantity"],
+                    "price" => $plan["price"],
+                    "currency" => $plan["currency"],
+                    "discount" => $plan["discount"],
+                    "merchant_code" => $plan["merchant_code"]
+                ];
+
+                $newMigration->saveUnique("plan", $plan["plan"], $dataToSave);
             }
         }
+
+        return json_encode([
+            "status" => "success",
+            "response" => "Plans synced successfully"
+        ]);
     }
 }
-?>

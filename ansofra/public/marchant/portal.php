@@ -85,10 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <main class="portal-main">
     <div class="container">
-        <?php echo $plansData; ?>
+        <?php //echo $plansData; ?>
         <!-- PLAN SELECT -->
         <?php if ($plansData && $plansData['status'] === "success"): ?>
-            <form method="POST">
+            <form method="POST" class="form-group">
                 <select name="plans_id">
                     <?php foreach ($plansData['response'] as $plan): ?>
                         <option value="<?= $plan['plans_id'] ?>">
@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endforeach; ?>
                 </select>
                 <br><br>
-                <button type="submit">Pay</button>
+                <button type="submit" class="btn btn-secondary">Pay</button>
             </form>
         <?php else: ?>
             <p>Failed to load plans</p>

@@ -77,7 +77,7 @@ class Register{
                     //now generate reserved account for him from the API
                     $explodeFullname = explode(' ', $fullnameToUse);
                     $dataToGen = [
-                        "email" => $this->dto->email,
+                        "email" => $emailToUse,
                         "first_name" => $explodeFullname[1],
                         "last_name" => $explodeFullname[0],
                         "phone" => $this->dto->phone ? $this->dto->phone : "",

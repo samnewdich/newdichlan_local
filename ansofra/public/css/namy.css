@@ -1,0 +1,129 @@
+    :root {
+      --bg-dark: #020617;
+      --accent: #00aaff;
+      --text-light: #e0e0ff;
+      --font: "Poppins", sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font);
+      background: radial-gradient(circle at top, #030a1e, var(--bg-dark));
+      color: var(--text-light);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* ==== Logo Animation Container ==== */
+    .logo-container {
+      position: relative;
+      max-width: 500px;
+      width: 80%;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .logo-container img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      filter: drop-shadow(0 0 25px rgba(0, 170, 255, 0.6));
+      animation: glow 4s ease-in-out infinite alternate;
+    }
+
+    /* ==== Title and Text ==== */
+    .title {
+      margin-top: 1.5rem;
+      font-size: 2.5rem;
+      letter-spacing: 2px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 0 12px rgba(0, 170, 255, 0.8);
+    }
+
+    .subtitle {
+      margin-top: 0.5rem;
+      font-size: 1.1rem;
+      color: #a0a0c0;
+    }
+
+    /* ==== Floating Glow Animations ==== */
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-12px);
+      }
+    }
+
+    @keyframes glow {
+      0% {
+        filter: drop-shadow(0 0 15px rgba(0, 170, 255, 0.5));
+      }
+      100% {
+        filter: drop-shadow(0 0 35px rgba(0, 170, 255, 1));
+      }
+    }
+
+    /* ==== Background Animated Particles ==== */
+    .particle {
+      position: absolute;
+      background: rgba(0, 170, 255, 0.3);
+      border-radius: 50%;
+      animation: moveParticles linear infinite;
+    }
+
+    @keyframes moveParticles {
+      from {
+        transform: translateY(100vh) scale(0.5);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(-10vh) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* ==== Responsiveness ==== */
+    @media (max-width: 768px) {
+      .title {
+        font-size: 2rem;
+      }
+      .subtitle {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .logo-container {
+        width: 90%;
+      }
+      .title {
+        font-size: 1.8rem;
+      }
+      .subtitle {
+        font-size: 0.95rem;
+      }
+    }
+
+    footer {
+      position: absolute;
+      bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: #aaa;
+      opacity: 0.8;
+    }
+
+    footer strong {
+      color: var(--accent);
+    }

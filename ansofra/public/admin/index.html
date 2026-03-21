@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ansofra(CQRS) PHP Framework - Newdich Technology</title>
+  <link rel="stylesheet" href="../css/namy.css" />
+  <link rel="favicon" href="../assets/logo.jpg" />
+  <link rel="icon" href="../assets/logo.jpg" />
+</head>
+<body>
+  <!-- Background animation layer -->
+  <div id="particles"></div>
+
+  <div class="logo-container">
+    <img src="../assets/logo.jpg" alt="Ansofra Logo" />
+  </div>
+
+  <h1 class="title">ANSOFRA - ADMIN PAGE</h1>
+  <p class="subtitle">Command & Query (CQRS) Oriented PHP Framework</p>
+
+  <footer>
+    © <span id="year"></span> <strong onclick="newdichTech()">Newdich Technology</strong>
+  </footer>
+
+  <script>
+    // Auto year update
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Particle generator for glowing background
+    const particleContainer = document.getElementById("particles");
+
+    for (let i = 0; i < 25; i++) {
+      const particle = document.createElement("div");
+      const size = Math.random() * 5 + 3;
+      particle.classList.add("particle");
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.left = `${Math.random() * 100}vw`;
+      particle.style.animationDuration = `${4 + Math.random() * 6}s`;
+      particle.style.animationDelay = `${Math.random() * 4}s`;
+      particleContainer.appendChild(particle);
+    }
+
+    function newdichTech(){
+        window.location.href="https://newdich.tech";
+    }
+  </script>
+</body>
+</html>

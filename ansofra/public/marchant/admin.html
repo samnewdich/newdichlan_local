@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Dashboard - Newdich</title>
+    <link rel="stylesheet" href="/public/marchant/css/style.css?v=2.020">
+</head>
+<body>
+    <header class="admin-header">
+        <div class="container">
+            <div>
+                <div class="eyebrow">Newdich LAN Merchant Console</div>
+                <h1 id="merchant-name">Merchant Dashboard</h1>
+                <div class="subtle" id="merchant-id">ID: --</div>
+            </div>
+            <div class="header-actions">
+                <button id="refresh-btn" class="btn btn-ghost" onclick="refresh()">Refresh</button>
+                <button class="btn btn-secondary" onclick="logoutMarchant()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="admin-tabs">
+        <div class="container">
+            <button class="tab-link active" data-tab="overview" onclick="overview()">Overview</button>
+            <button class="tab-link" data-tab="users" onclick="users()">Users</button>
+            <button class="tab-link" data-tab="history" onclick="paymentHisory()">Payment History</button>
+            <button class="tab-link" data-tab="plans" onclick="addPlans()">Add Plans</button>
+            <button class="tab-link" data-tab="plans" onclick="managePlans()">Manage Plans</button>
+            <button class="tab-link" data-tab="profile" onclick="profile()">Profile</button>
+        </div>
+    </nav>
+
+    <main class="admin-main">
+        <div class="container">
+            <h4 id="usernameh4">USER FULLNAME</h4>
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <div class="grid-2">
+                    
+                    <section class="card" id="network_status">
+                        <div class="card-header">
+                            <h2>Network Status</h2>
+                            <span class="badge" id="status-badge">Live</span>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat">
+                                <div class="stat-label">Active Users</div>
+                                <div class="stat-value" id="stat-active">--</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Total Users</div>
+                                <div class="stat-value" id="stat-total">--</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Revenue (Today)</div>
+                                <div class="stat-value" id="stat-revenue-today">--</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Transactions (Today)</div>
+                                <div class="stat-value" id="stat-tx-today">--</div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    
+                    <section class="card" id="revenue_summary">
+                        <div class="card-header">
+                            <h2>Revenue Summary</h2>
+                            <span class="subtle">Last 30 days</span>
+                        </div>
+                        <div class="kpis">
+                            <div>
+                                <div class="kpi-label">Gross</div>
+                                <div class="kpi-value" id="kpi-gross">--</div>
+                            </div>
+                            <div>
+                                <div class="kpi-label">Refunds</div>
+                                <div class="kpi-value" id="kpi-refunds">--</div>
+                            </div>
+                            <div>
+                                <div class="kpi-label">Net</div>
+                                <div class="kpi-value" id="kpi-net">--</div>
+                            </div>
+                        </div>
+                        <div class="mini-table" id="revenue-breakdown"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users" class="tab-content">
+                <h2>Connected Users</h2>
+                <div class="table-responsive">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>MAC</th>
+                                <th>IP</th>
+                                <th>Email</th>
+                                <th>Plan</th>
+                                <th>Hours</th>
+                                <th>Expires</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payment History Tab -->
+            <div id="history" class="tab-content">
+                <h2>Payment History</h2>
+                <div class="table-responsive">
+                    <table id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Txn ID</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Mac</th>
+                                <th>Date</th>
+                                <th>Plan</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historybody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add Plans -->
+            <div id="addplans" class="tab-content">
+                <h2>Add Plans</h2>
+                <!-- Plan Form (hidden initially) -->
+                <div id="plan-form-container" style="display: block;">
+                    <h3 id="plan-form-title">Add Plan</h3>
+                    <form id="plan-form">
+                        <div class="form-group">
+                            <label for="plan-name">Plan Name</label>
+                            <select id="plan" name="plan" onchange="switchPlan(this)" required>
+                                <option value="">Select Plan</option>
+                                <option value="1hour">1 Hour</option>
+                                <option value="6hours">6 Hours</option>
+                                <option value="12hours">12 Hours</option>
+                                <option value="1day">1 Day(24 hours)</option>
+                                <option value="2days">2 Days(48 hours)</option>
+                                <option value="3days">3 Days(72 hours)</option>
+                                <option value="4days">4 Days(96 hours)</option>
+                                <option value="5days">5 Days(120 hours)</option>
+                                <option value="6days">6 Days(144 hours)</option>
+                                <option value="1week">1 Week(7 days)</option>
+                                <option value="2weeks">2 Weeks(14 days)</option>
+                                <option value="3weeks">3 Weeks(21 days)</option>
+                                <option value="1month">1 Month(4 weeks)</option>
+                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-duration">Duration (hours)</label>
+                            <input type="text" id="duration" name="duration" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-duration">Quantity (Gigabyte)[optional]</label>
+                            <input type="number" id="quantity" name="quantity" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Price</label>
+                            <input type="number" id="price" name="price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Discount(Optional)</label>
+                            <input type="number" id="discount" name="discount" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Currency</label>
+                            <select name="currency" id="currency">
+                                <option value="NGN">NGN - Nigerian Naira</option>
+                                <option value="GHC">GHC - Ghanian Cedis</option>
+                                <option value="USD">USD - United States Dollar</option>
+                                <option value="ZAR">ZAR - South African Rands</option>
+                                <option value="GBP">GBP - Great British Pounds</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Marchant Code</label>
+                            <input type="text" id="marchant_code_display" required>
+                            <input type="hidden" id="marchant_code_set" name="marchant_code_set" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" onclick="addingPlans()">Save</button>
+                        <button type="button" id="cancel-plan-btn" class="btn btn-secondary">Cancel</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Manage Plans-->
+            <div id="manageplans" class="tab-content">
+                <h2>Manage Plans</h2>
+                <div class="table-responsive">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th>Duration</th>
+                                <th>Price</th>
+                                <th>Currency</th>
+                                <th>Discount</th>
+                                <th>Quantity</th>
+                                <th>Marchant Code</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manageplansbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            
+            <div id="deleteplan" class="tab-content">
+                <h2>Delete Plan</h2>
+                <div class="table-responsive" id="deleteplaninner"></div>
+            </div>
+            
+            
+            <div id="editplan" class="tab-content">
+                <h2>Edit Plan</h2>
+                <!-- Plan Form (hidden initially) -->
+                <div id="plan-form-container" style="display: block;">
+                    <h3 id="plan-form-title">Edit Plan</h3>
+                    <form id="editplan-form">
+                        <div class="form-group">
+                            <label for="plan-name">Plan Name</label>
+                            <select id="plan" name="plan" onchange="switchPlan(this)" required>
+                                <option id="editplanplanoption">Select Plan</option>
+                                <option value="1hour">1 Hour</option>
+                                <option value="6hours">6 Hours</option>
+                                <option value="12hours">12 Hours</option>
+                                <option value="1day">1 Day(24 hours)</option>
+                                <option value="2days">2 Days(48 hours)</option>
+                                <option value="3days">3 Days(72 hours)</option>
+                                <option value="4days">4 Days(96 hours)</option>
+                                <option value="5days">5 Days(120 hours)</option>
+                                <option value="6days">6 Days(144 hours)</option>
+                                <option value="1week">1 Week(7 days)</option>
+                                <option value="2weeks">2 Weeks(14 days)</option>
+                                <option value="3weeks">3 Weeks(21 days)</option>
+                                <option value="1month">1 Month(4 weeks)</option>
+                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-duration">Duration (hours)</label>
+                            <input type="text" id="editplanduration" name="duration" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-duration">Quantity (Gigabyte)[optional]</label>
+                            <input type="number" id="editplanquantity" name="quantity" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Price</label>
+                            <input type="number" id="editplanprice" name="price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Discount(Optional)</label>
+                            <input type="number" id="editplandiscount" name="discount" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Currency</label>
+                            <select name="currency" id="currency">
+                                <option id="editplancurrencyoption"></option>
+                                <option value="NGN">NGN - Nigerian Naira</option>
+                                <option value="GHC">GHC - Ghanian Cedis</option>
+                                <option value="USD">USD - United States Dollar</option>
+                                <option value="ZAR">ZAR - South African Rands</option>
+                                <option value="GBP">GBP - Great British Pounds</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan-price">Marchant Code</label>
+                            <input type="text" id="editplanmarchant_code_display" required>
+                            <input type="hidden" id="editplanmarchant_code_set" name="marchant_code_set" required>
+                            <input type="hidden" id="editplanaction" name="action" required>
+                            <input type="hidden" id="editplanplan_id" name="plans_id" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" onclick="editingPlans()">Save</button>
+                        <button type="button" id="cancel-plan-btn" class="btn btn-secondary">Cancel</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profile" class="tab-content">
+                <h2>Merchant Profile</h2>
+                <form id="profile-form" class="card form-card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-name">Business Name</label>
+                            <input type="text" id="business_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-contact">Email</label>
+                            <input type="email" id="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="account_type">Account Type</label>
+                            <input type="text" id="account_type" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="amount_paid">Amount Paid</label>
+                            <input type="text" id="amount_paid" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fullname">Fullname</label>
+                            <input type="text" id="fullname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="marchant_code">Marchant Code</label>
+                            <input type="text" id="marchant_code" required>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-phone">Phone</label>
+                            <input type="text" id="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-location">Location</label>
+                            <input type="text" id="address">
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-state">State(Region)</label>
+                            <input type="text" id="state">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-country">Country</label>
+                            <input type="text" id="country">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-account_type">Fee Rate(%)</label>
+                            <input type="text" id="fee_rate">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-phone">Referrer Code</label>
+                            <input type="text" id="refer_code">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-location">Referred By</label>
+                            <input type="text" id="refer_by">
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="profile-network">Status</label>
+                            <input type="text" id="status">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-timezone">Date Created</label>
+                            <input type="text" id="date_created">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" disabled>Save Profile</button>
+                        <div id="profile-message" class="inline-message"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Powered by NEWDICH TECHNOLOGY</p>
+            <p>&copy; <span id="year"></span> Newdich Technology</p>
+        </div>
+    </footer>
+
+    <!--<script src="/public/marchant/api/index.js"></script>
+    <script src="/public/marchant/js/admin.js"></script>-->
+    <script>
+        loginCheck();
+        
+        function loginCheck(){
+            let loggeduser = localStorage.getItem("loggeduser");
+            if(loggeduser ==='' || loggeduser ===null || loggeduser ===undefined){
+                window.location.href="/marchant";
+            }
+        }
+    </script>
+    
+    <script>
+        function logoutMarchant(){
+            localStorage.clear;
+            localStorage.removeItem("loggeduser");
+            refresh();
+        }
+    </script>
+    
+    <script>
+        let globalTotalPages = 0;
+        let globalTotalRows = 0;
+        let globalOffset = 0;
+        let globalLimit = 50;
+        let globalMarchant;
+        let loggeduser = localStorage.getItem("loggeduser");
+        if(loggeduser !=='' && loggeduser !==null && loggeduser !==undefined){
+            let userprofile = JSON.parse(loggeduser);
+            let email = userprofile.email;
+            let fullname = userprofile.fullname;
+            let phone = userprofile.phone;
+            let marchant_code = userprofile.marchant_code;
+            globalMarchant = marchant_code;
+            let date_created = userprofile.date_created;
+            let address = userprofile.address;
+            let city = userprofile.city;
+            let state = userprofile.state;
+            let country = userprofile.country;
+            let status = userprofile.status;
+            let account_type = userprofile.account_type;
+            let business_name = userprofile.business_name;
+            let fee_rate = userprofile.fee_rate;
+            let refer_code = userprofile.refer_code;
+            let amount_paid = userprofile.amount_paid;
+            let refer_by = userprofile.refer_by;
+            
+            document.getElementById("merchant-id").innerHTML=`ID: ${marchant_code}`;
+            document.getElementById("usernameh4").innerHTML=`${fullname.toUpperCase()}`;
+            document.getElementById("account_type").value=`${account_type}`;
+            document.getElementById("email").value=`${email}`;
+            document.getElementById("fullname").value=`${fullname}`;
+            document.getElementById("phone").value=`${phone}`;
+            document.getElementById("marchant_code").value=`${marchant_code}`;
+            document.getElementById("address").value=`${address}`;
+            document.getElementById("date_created").value=`${date_created}`;
+            document.getElementById("city").value=`${city}`;
+            document.getElementById("state").value=`${state}`;
+            document.getElementById("country").value=`${country}`;
+            document.getElementById("status").value=`${status}`;
+            document.getElementById("business_name").value=`${business_name}`;
+            document.getElementById("fee_rate").value=`${fee_rate}`;
+            document.getElementById("refer_code").value=`${refer_code}`;
+            document.getElementById("amount_paid").value=`${amount_paid}`;
+            document.getElementById("refer_by").value=`${refer_by}`;
+            
+            document.getElementById("marchant_code_display").value=`${marchant_code}`;
+            document.getElementById("marchant_code_set").value=`${marchant_code}`;
+        }
+        
+        function refresh(){
+            window.location.href="/marchant_admin";
+        }
+        
+        function overview(){
+            document.getElementById("addplans").style.display="none";
+            document.getElementById("manageplans").style.display="none";
+            document.getElementById("overview").style.display="block";
+            document.getElementById("users").style.display="none";
+            document.getElementById("history").style.display="none";
+            document.getElementById("profile").style.display="none";
+            document.getElementById("deleteplan").style.display="none";
+            document.getElementById("editplan").style.display="none";
+        }
+        
+        function users(){
+            document.getElementById("addplans").style.display="none";
+            document.getElementById("manageplans").style.display="none";
+            document.getElementById("overview").style.display="none";
+            document.getElementById("users").style.display="block";
+            document.getElementById("history").style.display="none";
+            document.getElementById("profile").style.display="none";
+            document.getElementById("deleteplan").style.display="none";
+            document.getElementById("editplan").style.display="none";
+        }
+        
+        function paymentHisory(){
+            document.getElementById("addplans").style.display="none";
+            document.getElementById("manageplans").style.display="none";
+            document.getElementById("overview").style.display="none";
+            document.getElementById("users").style.display="none";
+            document.getElementById("history").style.display="block";
+            document.getElementById("profile").style.display="none";
+            document.getElementById("deleteplan").style.display="none";
+            document.getElementById("editplan").style.display="none";
+        }
+        
+        function addPlans(){
+            document.getElementById("addplans").style.display="block";
+            document.getElementById("manageplans").style.display="none";
+            document.getElementById("overview").style.display="none";
+            document.getElementById("users").style.display="none";
+            document.getElementById("history").style.display="none";
+            document.getElementById("profile").style.display="none";
+            document.getElementById("deleteplan").style.display="none";
+            document.getElementById("editplan").style.display="none";
+        }
+        
+        function managePlans(){
+            document.getElementById("addplans").style.display="none";
+            document.getElementById("manageplans").style.display="block";
+            document.getElementById("overview").style.display="none";
+            document.getElementById("users").style.display="none";
+            document.getElementById("history").style.display="none";
+            document.getElementById("profile").style.display="none";
+            document.getElementById("deleteplan").style.display="none";
+            document.getElementById("editplan").style.display="none";
+        }
+        
+        function profile(){
+            document.getElementById("addplans").style.display="none";
+            document.getElementById("manageplans").style.display="none";
+            document.getElementById("overview").style.display="none";
+            document.getElementById("users").style.display="none";
+            document.getElementById("history").style.display="none";
+            document.getElementById("profile").style.display="block";
+            document.getElementById("deleteplan").style.display="none";
+            document.getElementById("editplan").style.display="none";
+        }
+        
+        
+        function deletePlan(id, marchant_code){
+            document.getElementById("addplans").style.display="none";
+            document.getElementById("manageplans").style.display="none";
+            document.getElementById("overview").style.display="none";
+            document.getElementById("users").style.display="none";
+            document.getElementById("history").style.display="none";
+            document.getElementById("profile").style.display="none";
+            document.getElementById("deleteplan").style.display="block";
+            document.getElementById("editplan").style.display="none";
+            
+            document.getElementById("deleteplaninner").innerHTML=`
+                <div style="align:center;">
+                    Are you sure you want to delete this plan ?
+                    <hr>
+                    <table>
+                        <tr>
+                            <td>
+                                <button class="btn btn-primary" onclick="deletePlanFinal('${id}', '${marchant_code}')">Delete</button>
+                            </td>
+                            
+                            <td><button class="btn btn-primary" onclick="refresh()">Cancel</button></td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+        }
+        
+        
+        async function deletePlanFinal(id, marchant_code){
+            let data = {plans_id:id, marchant_code:marchant_code, action:'delete'};
+            let api = await fetch('/api/editplans', {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(data)
+            });
+            let res = await api.json();
+            if(res.status==="success"){
+                alert(`Plan deleted successfully`);
+                refresh();
+                return;
+            }
+            else{
+                alert(`${res.response}`);
+                refresh();
+            }
+        }
+        
+        
+        async function editPlan(id, marchant_code){
+            document.getElementById("addplans").style.display="none";
+            document.getElementById("manageplans").style.display="none";
+            document.getElementById("overview").style.display="none";
+            document.getElementById("users").style.display="none";
+            document.getElementById("history").style.display="none";
+            document.getElementById("profile").style.display="none";
+            document.getElementById("deleteplan").style.display="none";
+            document.getElementById("editplan").style.display="block";
+            
+            let data = {plans_id:id, marchant_code:marchant_code};
+            let api = await fetch('/api/geteachplans', {
+                method:"POST",
+                headers:{
+                    "Content-Type":'application/json'
+                },
+                body:JSON.stringify(data)
+            });
+            let res = await api.json();
+            if(res.status==="success"){
+                let response = res.response[0];
+                document.getElementById("editplanplanoption").innerHTML=`<option value="${response.plan}">${response.plan}</option>`;
+                document.getElementById("editplanduration").value=response.duration;
+                document.getElementById("editplanquantity").value=response.quantity;
+                document.getElementById("editplanprice").value=response.price;
+                document.getElementById("editplandiscount").value=response.discount;
+                document.getElementById("editplancurrencyoption").innerHTML=`<option value="${response.currency}">${response.currency}</option>`;
+                document.getElementById("editplanmarchant_code_display").value=response.marchant_code;
+                document.getElementById("editplanmarchant_code_set").value=response.marchant_code;
+                document.getElementById("editplanaction").value='update';
+                document.getElementById("editplanplan_id").value=response.plans_id;
+                return;
+            }
+            else{
+                alert(`${res.response}`);
+                refresh();
+            }
+        }
+        
+        async function editingPlans(){
+            event.preventDefault();
+            let plan_form = document.getElementById("editplan-form");
+            let formdata = new FormData(plan_form);
+            let formobj = {};
+            formdata.forEach((v, k)=>{
+                formobj[k] = v;
+            });
+            let api = await fetch('/api/editplans', {
+                method:"POST",
+                header:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(formobj)
+            });
+            
+            let res = await api.json();
+            if(res.status ==="success"){
+                alert(`Plan Saved Successfully`);
+                refresh();
+            }
+            else{
+                alert(`${res.response}`);
+            }
+        }
+        
+        
+        function switchPlan(that){
+            let data = that.value;
+            document.getElementById("duration").value=data;
+        }
+        
+        async function addingPlans(){
+            event.preventDefault();
+            let plan_form = document.getElementById("plan-form");
+            let formdata = new FormData(plan_form);
+            let api = await fetch('/api/addplans', {
+                method:"POST",
+                body:formdata
+            });
+            
+            let res = await api.json();
+            if(res.status ==="success"){
+                alert(`Plan Added Successfully`);
+                refresh();
+            }
+            else{
+                alert(`${res.response}`);
+            }
+        }
+        
+        
+        
+        getPlans();
+        
+        async function getPlans(){
+            let loggeduser = await localStorage.getItem("loggeduser");
+            if(loggeduser !=='' && loggeduser !==null && loggeduser !==undefined){
+                let userprofile = JSON.parse(loggeduser);
+                let marchant_code = userprofile.marchant_code;
+                
+                let api = await fetch('/api/getplans', {
+                    method:"POST",
+                    headers:{
+                        'Content-Type':'application/json'
+                    },
+                    body: JSON.stringify({marchant_code:marchant_code})
+                });
+                
+                let res = await api.json();
+                
+                let output=``;
+                if(res.status ==="success"){
+                    let response = res.response;
+                    for(let i=0; i < response.length; i++){
+                        output +=`
+                            <tr>
+                                <td>${response[i].plan}</td>
+                                <td>${response[i].duration}</td>
+                                <td>${response[i].price}</td>
+                                <td>${response[i].currency}</td>
+                                <td>${response[i].discount}</td>
+                                <td>${response[i].quantity}</td>
+                                <td>${response[i].marchant_code}</td>
+                                <td><button onclick="editPlan('${response[i].plans_id}', '${response[i].marchant_code}')" class="btn btn-primary">Edit</button>  <br/>  <button onclick="deletePlan('${response[i].plans_id}', '${response[i].marchant_code}')" class="btn btn-primary" style="background-color:red;">Delete</button></td>
+                            </tr>
+                        `;
+                    }
+                }
+                else{
+                    alert(`${res.response}`);
+                }
+                document.getElementById("manageplansbody").innerHTML=`${output}`;
+            }
+        }
+        
+        
+        
+        async function getPaymentHistory(){
+            let data = {marchant_code:globalMarchant, offset:globalOffset, limit:globalLimit};
+            let api = await fetch('/api/getpaymenthistory', {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(data)
+            });
+            let res = await api.json();
+            
+            let outer =``;
+            if(res.status ==="success"){
+                let response = res.response;
+                for(let i=0; i < response.length; i++){
+                    outer =`
+                        <tr>
+                            <td>${response[i].currency}${response[i].amount}</td>
+                            <td>${response[i].status}</td>
+                            <td>${response[i].mac}</td>
+                            <td>${formatDate(response[i].date_started)}</td>
+                            <td>${response[i].plan}</td>
+                            <td>${response[i].email}</td>
+                            <td><button onclick="paymentHistoryDetails('${response[i].payment_id}', '${response[i].marchant_code}')">Details</button></td>
+                        </tr>
+                    `;
+                    
+                    if(i === response.length - 1){
+                        globalOffset += response[i];
+                        globalTotalRows = response[i].total_rows;
+                        globalTotalPages = Math.ceil(globalTotalRows / globalLimit);
+                    }
+                }
+            }
+            else{
+                alert(`${res.response}`);
+                refresh();
+            }
+            
+            if(globalOffset >= globalLimit){
+                outer +=`
+                    <tr>
+                        <td><button>Previous</button></td>
+                        <td></td>
+                        <td></td>
+                        <td><button>Next</button></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>${Math.ceil(globalOffset / globalLimit)}</td>
+                        <td> of </td>
+                        <td>${globalTotalPages}</td>
+                    </tr>
+                `;    
+            }
+            else if(globalTotalRows > globalOffset){
+                outer +=`
+                    <tr>
+                        <td><button>Next</button></td>
+                    </tr>
+                    <tr>
+                        <td>${Math.ceil(globalOffset / globalLimit)}</td>
+                        <td> of </td>
+                        <td>${globalTotalPages}</td>
+                    </tr>
+                `;
+            }
+            
+            document.getElementById("historybody").innerHTML=outer;
+        }
+    </script>
+</body>
+</html>

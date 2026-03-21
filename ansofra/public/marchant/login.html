@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Login - Newdich LAN</title>
+    <link rel="stylesheet" href="/public/marchant/css/style.css">
+</head>
+<body>
+    <main class="login-page">
+        <div class="login-box">
+            <h2>Merchant Login</h2>
+            <div id="output" style="text-align:center; color:green;"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" onclick="logiMarchant()" class="btn btn-primary">Login</button>
+                <div id="login-message" class="message"></div>
+            </form>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>Powered by NEWDICH TECHNOLOGY</p>
+            <p>&copy; <span id="year"></span> Newdich Technology</p>
+        </div>
+    </footer>
+    <!--<script src="/public/marchant/api/index.js"></script>
+    <script src="/public/marchant/js/login.js"></script>-->
+    <script>
+        //check if he just registered
+        let regg = localStorage.getItem("regsuccess");
+        if(regg !=='' && regg !==null && regg !==undefined){
+            document.getElementById("output").innerHTML=`${regg}`;
+        }
+        
+        async function logiMarchant(){
+            event.preventDefault();
+            let login = document.getElementById("login-form");
+            let formdata = new FormData(login);
+            
+            let api = await fetch('/api/loginmarchant', {
+                method:"POST",
+                body:formdata
+            });
+            
+            let res = await api.json();
+            if(res.status ==="success"){
+                let response = res.response[0];
+                let loggedUser = localStorage.setItem("loggeduser", JSON.stringify(response));
+                alert("Login was successful");
+                window.location.href="/marchant_admin";
+            }
+            else{
+                alert(`${res.response}`);
+            }
+        }
+    </script>
+</body>
+</html>

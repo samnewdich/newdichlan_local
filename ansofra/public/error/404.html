@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ansofra | 404 - Page Not Found</title>
+
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --secondary: #6366f1;
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #020617, #0f172a);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px 30px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .code {
+      font-size: 120px;
+      font-weight: 800;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+
+    h1 {
+      margin-top: 10px;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 15px 0 30px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      color: white;
+      text-decoration: none;
+      border-radius: 999px;
+      font-weight: 600;
+      transition: 0.3s ease;
+      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(79, 70, 229, 0.5);
+    }
+
+    .illustration {
+      font-size: 60px;
+      margin-bottom: 10px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0);}
+      50% { transform: translateY(-10px);}
+    }
+
+    /* Mobile tweaks */
+    @media (max-width: 480px) {
+      .code {
+        font-size: 80px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="illustration">🚫</div>
+    <div class="code">404</div>
+    <h1>Ansofra Page Not Found</h1>
+    <p>
+      Oops! The page you're looking for doesn't exist or has been moved.
+      Please check the URL or return to the homepage.
+    </p>
+    <p>Built With Ansofra by Newdich Technology</p>
+
+    <a href="/" class="btn">Go Back Home</a>
+  </div>
+
+</body>
+</html>

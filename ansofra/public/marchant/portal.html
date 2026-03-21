@@ -9,7 +9,7 @@
 <body>
     <header class="portal-header">
         <div class="container">
-            <h1>Welcome to <span id="network-name">Network Name</span></h1>
+            <h1>Welcome to <span id="network-name">Newdich LAN</span></h1>
             <p>Choose a plan to get online</p>
         </div>
     </header>
@@ -48,6 +48,8 @@
     </footer>
 
     <script>
+        plans();
+        
         async function plans() {
             let api = await fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/getplans', {
                 method:"POST",

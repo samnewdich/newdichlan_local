@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <main class="portal-main">
     <div class="container">
-
+        <?php echo $plansData; ?>
         <!-- PLAN SELECT -->
         <?php if ($plansData && $plansData['status'] === "success"): ?>
             <form method="POST">

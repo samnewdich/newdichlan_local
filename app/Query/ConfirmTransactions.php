@@ -1,25 +1,29 @@
 <?php
 namespace NewdichApp\Query;
+
 use NewdichDto\AnsofraDto;
 use NewdichSchema\Migration;
 use NewdichSchema\Platform;
 use NewdichSchema\Settings;
 
-class ConfirmTransactions{
+class ConfirmTransactions {
+
     private $dto;
     private $table = Platform::USERS_TABLE;
-    private $marchant_code = Settings::MARCHANT_CODE;
+    private $merchant_code = Settings::MARCHANT_CODE;
 
-    public function __construct(AnsofraDto $dto){
+    public function __construct(AnsofraDto $dto = null) {
         $this->dto = $dto;
     }
 
-    public function process(){
-        //gets data from api to confirm those who recently paid
+    public function process() {
+
         $dataToCheck = [
-            "marchant_code" => $this->marchant_code
+            "merchant_code" => $this->merchant_code
         ];
+
         $ch = curl_init();
+
         curl_setopt_array($ch, [
             CURLOPT_URL => "https://lan.newdich.tech/api/confirmtransactions",
             CURLOPT_RETURNTRANSFER => true,
@@ -29,54 +33,57 @@ class ConfirmTransactions{
             ],
             CURLOPT_POSTFIELDS => json_encode($dataToCheck),
         ]);
-        
+
         $response = curl_exec($ch);
         $err = curl_error($ch);
+
         curl_close($ch);
+
         if ($err) {
             return json_encode([
-                "status"=>"failed",
-                "response"=>"Error: " . $err
-            ], JSON_PRETTY_PRINT);
+                "status" => "failed",
+                "response" => "cURL Error: " . $err
+            ]);
         }
-        else
-        {
-            $newMigration = new Migration(null, $this->table);
-            $res = json_decode($response, true);
-            if($res["status"] ==="success"){
-                $resres = $res["response"];
-                for($i=0; $i < count($resres); $i++){
-                    //Update
-                    $eachUser = $resres[$i];
-                    $email = $eachUser["email"];
-                    $mac = $eachUser["mac"];
-                    $hashed_mac = $eachUser["hashed_mac"];
-                    $sub_status = $eachUser["sub_status"];
-                    $has_table_been_updated_locally = "yes";
-                    $expires_at = $eachUser["expires_at"];
 
-                    $dataToUpdate = [
-                        "has_table_been_updated_locally" => $has_table_been_updated_locally,
-                        "sub_status" => $sub_status,
-                        "expires_at" => $expires_at,
-                    ];
+        $res = json_decode($response, true);
 
-                    $condition = [
-                        "email" => $email,
-                        "mac" => $mac,
-                        "hashed_mac" => $hashed_mac,
-                        "marchant_code" => $this->marchant_code
-                    ];
-
-                    $newMigration->edit($dataToUpdate, $condition);
-                }
-
-                return $res;
-            }
-            else{
-                return $res;
-            }
+        if (!$res || !isset($res["status"])) {
+            return json_encode([
+                "status" => "failed",
+                "response" => "Invalid API response"
+            ]);
         }
+
+        if ($res["status"] !== "success") {
+            return $response;
+        }
+
+        $newMigration = new Migration(null, $this->table);
+        $users = $res["response"];
+
+        foreach ($users as $user) {
+
+            $condition = [
+                "email" => $user["email"],
+                "mac" => $user["mac"],
+                "hashed_mac" => $user["hashed_mac"],
+                "merchant_code" => $this->merchant_code
+            ];
+
+            $dataToUpdate = [
+                "has_table_been_updated_locally" => "yes",
+                "sub_status" => $user["sub_status"],
+                "expires_at" => $user["expires_at"]
+            ];
+
+            $newMigration->edit($dataToUpdate, $condition);
+        }
+
+        return json_encode([
+            "status" => "success",
+            "response" => "Transactions confirmed and updated"
+        ]);
     }
 }
 ?>

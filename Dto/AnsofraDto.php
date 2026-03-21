@@ -23,6 +23,8 @@ class AnsofraDto{
     public $action;
     public $currency;
     public $hashed_mac;
+    public $last_name;
+    public $first_name;
 
     public $mac;
     public $expires_at;

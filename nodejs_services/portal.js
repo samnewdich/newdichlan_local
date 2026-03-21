@@ -1,5 +1,5 @@
 // ────────────────────────────────────────────────
-// NEWDICH CAPTIVE PORTAL (portal.js)
+// NEWDICH CAPTIVE PORTAL (AUTO POPUP VERSION)
 // ────────────────────────────────────────────────
 
 const express = require('express');
@@ -11,7 +11,7 @@ const app = express();
 const GATEWAY_IP = "192.168.200.1";
 const DOWNSTREAM_IFACE = "eth0";
 
-// Your Apache payment page (LAMP on port 8080)
+// Your Apache payment page
 const PAYMENT_URL = "http://192.168.200.1:8080/newdichlan/ansofra/pay";
 
 // Cache for IP → MAC
@@ -35,50 +35,54 @@ function updateArpCache() {
   });
 }
 
-// Refresh every 5 seconds
+// refresh ARP cache
 setInterval(updateArpCache, 5000);
 
 // ────────────────────────────────────────────────
-// GET DEVICE NAME (HOSTNAME)
+// CAPTIVE PORTAL DETECTION ENDPOINTS (VERY IMPORTANT)
+// These trigger auto popup on Android, iPhone, Windows
 // ────────────────────────────────────────────────
-function getHostname(ip) {
-  return new Promise((resolve) => {
-    exec(`nmblookup -A ${ip}`, (err, stdout) => {
-      if (err || !stdout) return resolve("UNKNOWN");
 
-      const match = stdout.match(/<00>\s+UNIQUE\s+(.+)/);
-      if (match) {
-        resolve(match[1].trim());
-      } else {
-        resolve("UNKNOWN");
-      }
-    });
-  });
-}
+// Android
+app.get('/generate_204', (req, res) => {
+  res.redirect(302, buildRedirect(req));
+});
+
+// Apple (iPhone/iPad)
+app.get('/hotspot-detect.html', (req, res) => {
+  res.redirect(302, buildRedirect(req));
+});
+
+// Windows
+app.get('/ncsi.txt', (req, res) => {
+  res.redirect(302, buildRedirect(req));
+});
+
+// Generic fallback
+app.get('/connecttest.txt', (req, res) => {
+  res.redirect(302, buildRedirect(req));
+});
 
 // ────────────────────────────────────────────────
-// MAIN CAPTIVE PORTAL HANDLER
+// BUILD REDIRECT URL
 // ────────────────────────────────────────────────
-app.use(async (req, res) => {
+function buildRedirect(req) {
 
-  // Get client IP
   let ip = req.connection.remoteAddress || "";
   ip = ip.replace("::ffff:", "");
 
-  // Get MAC from ARP cache
   const mac = arpCache[ip] || "UNKNOWN";
 
-  // Try to get device name
-  const deviceName = await getHostname(ip);
+  console.log(`Device → IP: ${ip}, MAC: ${mac}`);
 
-  console.log(`Device connected → IP: ${ip}, MAC: ${mac}, NAME: ${deviceName}`);
+  return `${PAYMENT_URL}?mac=${encodeURIComponent(mac)}&ip=${encodeURIComponent(ip)}&current_time=${Math.floor(Date.now() / 1000)}`;
+}
 
-  // Build redirect URL with params
-  const redirectUrl =
-    `${PAYMENT_URL}?mac=${encodeURIComponent(mac)}&ip=${encodeURIComponent(ip)}&device=${encodeURIComponent(deviceName)}&current_time=${Math.floor(Date.now() / 1000)}`;
-
-  // Redirect user to payment page
-  res.redirect(302, redirectUrl);
+// ────────────────────────────────────────────────
+// MAIN HANDLER (FORCE REDIRECT EVERYTHING)
+// ────────────────────────────────────────────────
+app.use((req, res) => {
+  res.redirect(302, buildRedirect(req));
 });
 
 // ────────────────────────────────────────────────

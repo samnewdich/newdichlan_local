@@ -3,422 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connect to Network</title>
+    <title>Newdich Local Area Network</title>
     <link rel="stylesheet" href="/newdichlan/ansofra/public/marchant/css/style.css">
 </head>
 <body>
-    <header class="portal-header">
-        <div class="container">
-            <h1>Welcome to <span id="network-name">Newdich LAN</span></h1>
-            <p>Choose a plan to get online</p>
-        </div>
-    </header>
 
-    <main class="portal-main">
-        <div class="container">
-            <div class="plan-grid" id="plan-list">
-                <!-- Plans will be loaded here -->
-            </div>
-        </div>
-    </main>
-
-    <!-- Payment Modal (simplified) -->
-    <div id="payment-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Complete Payment</h3>
-            <p>Plan: <span id="modal-plan-name"></span></p>
-            <p>Amount: NGN <span id="modal-plan-price"></span></p>
-            <form id="payment-form">
-                <div class="form-group">
-                    <label for="payment-email">Email (optional)</label>
-                    <input type="email" id="payment-email" placeholder="Enter your email for receipt">
-                </div>
-                <button type="submit" class="btn btn-primary">Pay Now</button>
-            </form>
-            <div id="payment-message"></div>
-        </div>
+<header class="portal-header">
+    <div class="container">
+        <h1>Welcome to <span>Newdich LAN</span></h1>
+        <p>Choose a plan to get online</p>
     </div>
+</header>
 
-    <footer>
-        <div class="container">
-            <p>Powered by NEWDICH TECHNOLOGY</p>
-            <p>&copy; <span id="year"></span> Newdich Technology</p>
-        </div>
-    </footer>
+<main class="portal-main">
+    <div class="container">
+        <div id="plan-list"></div>
+        <div id="payment-screen"></div>
+    </div>
+</main>
 
-    <script>
-        plans();
-        
-        async function plans() {
-            let api = await fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/getplans', {
-                method:"POST",
-                headers:{
-                    'Content-Type':'application/json'
-                },
-                body:JSON.stringify()
-            });
+<footer>
+    <div class="container">
+        <p>Powered by NEWDICH TECHNOLOGY</p>
+        <p>&copy; <span id="year"></span> Newdich Technology</p>
+    </div>
+</footer>
 
-            let res = await api.json();
-            if(res.status ==="success"){
-                let output = `<form id="pay_form"><select name="plans_id">`;
-                let response = res.response;
-                for(let i=0; i < response.length; i++){
-                    output +=`
-                        <option value="${response[i].plans_id}">${response[i].plan} - ${response[i].currency} ${response[i].price}</option>
-                    `;
-                }
+<script>
 
-                output +=`</select>`;
-                output +=`
-                    <button id="paybtn" class="btn btn-secondary" onclick="pay()">Pay</button>
-                    <div id="screen"></div>
-                    </form>
-                `;
-            }
-            else{
-                alert(`${res.response}`);
-            }
+document.getElementById("year").innerText = new Date().getFullYear();
+
+const BASE = "http://192.168.200.1:8080/newdichlan/ansofra/api";
+
+init();
+
+async function init() {
+    await loadPlans();
+}
+
+// 🔹 Load plans
+async function loadPlans() {
+    try {
+        let res = await fetch(`${BASE}/getplans`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        let data = await res.json();
+
+        if (data.status !== "success") {
+            alert(data.response);
+            return;
         }
 
+        let output = `
+            <form id="pay_form">
+                <select id="plans_id">
+        `;
 
+        data.response.forEach(plan => {
+            output += `
+                <option value="${plan.plans_id}">
+                    ${plan.plan} - ${plan.currency} ${plan.price}
+                </option>
+            `;
+        });
 
+        output += `
+                </select><br/><br/>
+                <button type="submit">Pay</button>
+            </form>
+        `;
 
-        async function pay(){
-            event.preventDefault();
-            const params = Object.fromEntries(new URL(window.location.href).searchParams.entries());
-            let mac = params.mac;
-            let ip = params.ip;
-            let device = params.device;
-            let current_time = params.current_time;
-            let date_created = current_time;
+        document.getElementById("plan-list").innerHTML = output;
 
-            let plans_id = document.getElementById("plans_id").value;
+        document.getElementById("pay_form").addEventListener("submit", pay);
 
-            let body = {
-                mac : mac,
-                last_ip : ip,
-                device_name : device,
-                date_created : date_created,
-                current_time : current_time,
-                phone : ""
-            }
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load plans");
+    }
+}
 
-            //firstly check if he has data stored on his browser before
-            let devicedata = localStorage.getItem("devicedata");
-            if(devicedata || devicedata !=='' || devicedata !==null || devicedata !==undefined){
-                let profile = JSON.parse(devicedata);
-                let storedmac = profile.mac;
-                let storedAccount = profile.accounts; //array of reserved accounts
+// 🔹 Main Pay Logic
+async function pay(e) {
+    e.preventDefault();
 
-                let accountdom = ``;
-                for(let i=0; i < storedAccount.length; i++){
-                    accountdom +=`
-                        <p>${storedAccount[i].account_number}</p>
-                        <p>${storedAccount[i].account_name}</p>
-                        <p>${storedAccount[i].bank.name}</p>
-                        <hr/>
-                    `;
-                }
+    const params = Object.fromEntries(new URL(window.location.href).searchParams.entries());
 
-                //check whether his mac is same as the one stored
-                if(mac === storedmac){
-                    //just fetch the particular plan he seleted and show him to pay to one of the stored accounts
-                    let planApi = fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/geteachplans', {
-                        method:"POST",
-                        headers:{
-                            'Content-Type':'application/json'
-                        },
-                        body:JSON.stringify({plans_id:plans_id})
-                    });
-                    let planRes = await planApi.json();
-                    if(planRes.status ==="success"){
-                        let planResponse = planRes.response[0];
-                        let out = `
-                            <div>
-                                Plan : <strong>${planResponse.plan}</strong> <br/>
-                                Price : <strong>${planResponse.currency} ${planResponse.discount !=='' && planResponse.price >= planResponse.discount ? parseFloat(planResponse.price) - parseFloat(planResponse.discount) : planResponse.price}</strong> <br/>
-                                Make payment into any of these accounts below:<br/>
-                        `;
-                        out += accountdom;
-                        out +=`
-                            </div>
-                        `;
-                        document.getElementById("plan-list").innerHTM=out;
-                        return;
-                    }
-                    else{
-                        alert(`${planRes.response}`);
-                        window.location.href="http://192.168.200.1:8080/newdichlan/ansofra/pay";
-                        return;
-                    }
-                }
-                else{
-                    //then it means it's another device, register or fetch it
-                    //check if he has registered or not
-                    let apiNewMAc = await fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/register', {
-                        method:"POST",
-                        headers:{
-                            'Content-Type' : 'application/json'
-                        },
-                        body:JSON.stringify(body)
-                    });
-                    let resNewMAc = await apiNewMAc.json();
-                    if(resNewMAc.status ==="success"){
-                        //registration was successful
-                        //it will return the reserved account numbers
-                        //store it in the browser localstorage
-                        let resNewMAcResponse = resNewMAc.response;
-                        let devicedataNewMac = {
-                            mac:mac,
-                            accounts:resNewMAcResponse
-                        };
-                        localStorage.setItem("devicedata", JSON.stringify(devicedataNewMac));
+    const mac = params.mac;
+    const ip = params.ip;
+    const device = params.device;
+    const current_time = params.current_time;
 
-                        //loop it
-                        let accountdomNewMAc = ``;
-                        for(let i=0; i < resNewMAcResponse.length; i++){
-                            accountdomNewMAc +=`
-                                <p>${resNewMAcResponse[i].account_number}</p>
-                                <p>${resNewMAcResponse[i].account_name}</p>
-                                <p>${resNewMAcResponse[i].bank.name}</p>
-                                <hr/>
-                            `;
-                        }
+    const plans_id = document.getElementById("plans_id").value;
 
-                        //now fetch the plan he requested for
-                        let planApi = fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/geteachplans', {
-                            method:"POST",
-                            headers:{
-                                'Content-Type':'application/json'
-                            },
-                            body:JSON.stringify({plans_id:plans_id})
-                        });
-                        let planRes = await planApi.json();
-                        if(planRes.status ==="success"){
-                            let planResponse = planRes.response[0];
-                            let out = `
-                                <div>
-                                    Plan : <strong>${planResponse.plan}</strong> <br/>
-                                    Price : <strong>${planResponse.currency} ${planResponse.discount !=='' && planResponse.price >= planResponse.discount ? parseFloat(planResponse.price) - parseFloat(planResponse.discount) : planResponse.price}</strong> <br/>
-                                    Make payment into any of these accounts below:<br/>
-                            `;
-                            out += accountdomNewMAc;
-                            out +=`
-                                </div>
-                            `;
-                            document.getElementById("plan-list").innerHTM=out;
-                            return;
-                        }
-                        else{
-                            alert(`${planRes.response}`);
-                            window.location.href="http://192.168.200.1:8080/newdichlan/ansofra/pay";
-                            return;
-                        }
-                    }
-                    else{
-                        //he probably have registered before, try to fetch his reserved account data
-                        let loginApi = await fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/getreserved', {
-                            method:"POST",
-                            headers:{
-                                'Content-Type':'application/json'
-                            },
-                            body:JSON.stringify({mac:mac})
-                        });
-                        
-                        let loginRes = await loginApi.json();
-                        if(loginRes.status ==="success"){
-                            let loginResResponse = loginRes.response;
-                            let devicedataNewMac = {
-                                mac:mac,
-                                accounts:loginResResponse
-                            };
-                            localStorage.setItem("devicedata", JSON.stringify(devicedataNewMac));
+    const body = {
+        mac,
+        last_ip: ip,
+        device_name: device,
+        date_created: current_time,
+        current_time,
+        phone: ""
+    };
 
-                            //loop it
-                            let accountdomNewMAc = ``;
-                            for(let i=0; i < loginResResponse.length; i++){
-                                accountdomNewMAc +=`
-                                    <p>${loginResResponse[i].account_number}</p>
-                                    <p>${loginResResponse[i].account_name}</p>
-                                    <p>${loginResResponse[i].bank.name}</p>
-                                    <hr/>
-                                `;
-                            }
+    let stored = getStoredDevice();
 
-                            //now fetch the plan he requested for
-                            let planApi = fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/geteachplans', {
-                                method:"POST",
-                                headers:{
-                                    'Content-Type':'application/json'
-                                },
-                                body:JSON.stringify({plans_id:plans_id})
-                            });
-                            let planRes = await planApi.json();
-                            if(planRes.status ==="success"){
-                                let planResponse = planRes.response[0];
-                                let out = `
-                                    <div>
-                                        Plan : <strong>${planResponse.plan}</strong> <br/>
-                                        Price : <strong>${planResponse.currency} ${planResponse.discount !=='' && planResponse.price >= planResponse.discount ? parseFloat(planResponse.price) - parseFloat(planResponse.discount) : planResponse.price}</strong> <br/>
-                                        Make payment into any of these accounts below:<br/>
-                                `;
-                                out += accountdomNewMAc;
-                                out +=`
-                                    </div>
-                                `;
-                                document.getElementById("plan-list").innerHTM=out;
-                                return;
-                            }
-                            else{
-                                alert(`${planRes.response}`);
-                                window.location.href="http://192.168.200.1:8080/newdichlan/ansofra/pay";
-                                return;
-                            }
-                        }
-                        else{
-                            alert(`${loginRes.response}`);
-                            window.location.href="http://192.168.200.1:8080/newdichlan/ansofra/pay";
-                            return;
-                        }
-                    }
+    if (stored && stored.mac === mac) {
+        return renderPlanWithAccounts(plans_id, stored.accounts);
+    }
 
-                    //END COPY HERE
-                }
-            }
-            else{
+    // Register or fetch
+    let accounts = await registerOrFetch(mac, body);
 
-                //then it means it's another device, register or fetch it
-                    //check if he has registered or not
-                    let apiNewMAc = await fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/register', {
-                        method:"POST",
-                        headers:{
-                            'Content-Type' : 'application/json'
-                        },
-                        body:JSON.stringify(body)
-                    });
-                    let resNewMAc = await apiNewMAc.json();
-                    if(resNewMAc.status ==="success"){
-                        //registration was successful
-                        //it will return the reserved account numbers
-                        //store it in the browser localstorage
-                        let resNewMAcResponse = resNewMAc.response;
-                        let devicedataNewMac = {
-                            mac:mac,
-                            accounts:resNewMAcResponse
-                        };
-                        localStorage.setItem("devicedata", JSON.stringify(devicedataNewMac));
+    if (!accounts) return;
 
-                        //loop it
-                        let accountdomNewMAc = ``;
-                        for(let i=0; i < resNewMAcResponse.length; i++){
-                            accountdomNewMAc +=`
-                                <p>${resNewMAcResponse[i].account_number}</p>
-                                <p>${resNewMAcResponse[i].account_name}</p>
-                                <p>${resNewMAcResponse[i].bank.name}</p>
-                                <hr/>
-                            `;
-                        }
+    saveDevice(mac, accounts);
 
-                        //now fetch the plan he requested for
-                        let planApi = fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/geteachplans', {
-                            method:"POST",
-                            headers:{
-                                'Content-Type':'application/json'
-                            },
-                            body:JSON.stringify({plans_id:plans_id})
-                        });
-                        let planRes = await planApi.json();
-                        if(planRes.status ==="success"){
-                            let planResponse = planRes.response[0];
-                            let out = `
-                                <div>
-                                    Plan : <strong>${planResponse.plan}</strong> <br/>
-                                    Price : <strong>${planResponse.currency} ${planResponse.discount !=='' && planResponse.price >= planResponse.discount ? parseFloat(planResponse.price) - parseFloat(planResponse.discount) : planResponse.price}</strong> <br/>
-                                    Make payment into any of these accounts below:<br/>
-                            `;
-                            out += accountdomNewMAc;
-                            out +=`
-                                </div>
-                            `;
-                            document.getElementById("plan-list").innerHTM=out;
-                            return;
-                        }
-                        else{
-                            alert(`${planRes.response}`);
-                            window.location.href="http://192.168.200.1:8080/newdichlan/ansofra/pay";
-                            return;
-                        }
-                    }
-                    else{
-                        //he probably have registered before, try to fetch his reserved account data
-                        let loginApi = await fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/getreserved', {
-                            method:"POST",
-                            headers:{
-                                'Content-Type':'application/json'
-                            },
-                            body:JSON.stringify({mac:mac})
-                        });
-                        
-                        let loginRes = await loginApi.json();
-                        if(loginRes.status ==="success"){
-                            let loginResResponse = loginRes.response;
-                            let devicedataNewMac = {
-                                mac:mac,
-                                accounts:loginResResponse
-                            };
-                            localStorage.setItem("devicedata", JSON.stringify(devicedataNewMac));
+    return renderPlanWithAccounts(plans_id, accounts);
+}
 
-                            //loop it
-                            let accountdomNewMAc = ``;
-                            for(let i=0; i < loginResResponse.length; i++){
-                                accountdomNewMAc +=`
-                                    <p>${loginResResponse[i].account_number}</p>
-                                    <p>${loginResResponse[i].account_name}</p>
-                                    <p>${loginResResponse[i].bank.name}</p>
-                                    <hr/>
-                                `;
-                            }
+// 🔹 Register or fetch accounts
+async function registerOrFetch(mac, body) {
+    try {
+        let res = await fetch(`${BASE}/register`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
 
-                            //now fetch the plan he requested for
-                            let planApi = fetch('http://192.168.200.1:8080/newdichlan/ansofra/api/geteachplans', {
-                                method:"POST",
-                                headers:{
-                                    'Content-Type':'application/json'
-                                },
-                                body:JSON.stringify({plans_id:plans_id})
-                            });
-                            let planRes = await planApi.json();
-                            if(planRes.status ==="success"){
-                                let planResponse = planRes.response[0];
-                                let out = `
-                                    <div>
-                                        Plan : <strong>${planResponse.plan}</strong> <br/>
-                                        Price : <strong>${planResponse.currency} ${planResponse.discount !=='' && planResponse.price >= planResponse.discount ? parseFloat(planResponse.price) - parseFloat(planResponse.discount) : planResponse.price}</strong> <br/>
-                                        Make payment into any of these accounts below:<br/>
-                                `;
-                                out += accountdomNewMAc;
-                                out +=`
-                                    </div>
-                                `;
-                                document.getElementById("plan-list").innerHTM=out;
-                                return;
-                            }
-                            else{
-                                alert(`${planRes.response}`);
-                                window.location.href="http://192.168.200.1:8080/newdichlan/ansofra/pay";
-                                return;
-                            }
-                        }
-                        else{
-                            alert(`${loginRes.response}`);
-                            window.location.href="http://192.168.200.1:8080/newdichlan/ansofra/pay";
-                            return;
-                        }
-                    }
-            }
+        let data = await res.json();
+
+        if (data.status === "success") {
+            return data.response;
         }
 
-    </script>
+        // fallback to getreserved
+        let login = await fetch(`${BASE}/getreserved`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mac })
+        });
+
+        let loginData = await login.json();
+
+        if (loginData.status === "success") {
+            return loginData.response;
+        }
+
+        alert(loginData.response);
+        return null;
+
+    } catch (err) {
+        console.error(err);
+        alert("Network error");
+        return null;
+    }
+}
+
+// 🔹 Render plan + accounts
+async function renderPlanWithAccounts(plans_id, accounts) {
+    try {
+        let res = await fetch(`${BASE}/geteachplans`, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plans_id })
+        });
+
+        let data = await res.json();
+
+        if (data.status !== "success") {
+            alert(data.response);
+            return;
+        }
+
+        let plan = data.response[0];
+
+        let price = (plan.discount && plan.price >= plan.discount)
+            ? parseFloat(plan.price) - parseFloat(plan.discount)
+            : plan.price;
+
+        let accountHTML = accounts.map(acc => `
+            <div>
+                <p><strong>${acc.bank.name}</strong></p>
+                <p>${acc.account_number}</p>
+                <p>${acc.account_name}</p>
+                <hr/>
+            </div>
+        `).join("");
+
+        let output = `
+            <div>
+                <h3>${plan.plan}</h3>
+                <p><strong>${plan.currency} ${price}</strong></p>
+                <p>Make payment into any account below:</p>
+                ${accountHTML}
+            </div>
+        `;
+
+        document.getElementById("payment-screen").innerHTML = output;
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load plan");
+    }
+}
+
+// 🔹 LocalStorage helpers
+function getStoredDevice() {
+    try {
+        let data = localStorage.getItem("devicedata");
+        return data ? JSON.parse(data) : null;
+    } catch {
+        localStorage.removeItem("devicedata");
+        return null;
+    }
+}
+
+function saveDevice(mac, accounts) {
+    localStorage.setItem("devicedata", JSON.stringify({ mac, accounts }));
+}
+
+</script>
+
 </body>
 </html>

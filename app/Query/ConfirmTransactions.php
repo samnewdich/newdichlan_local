@@ -10,7 +10,7 @@ class ConfirmTransactions {
 
     private $dto;
     private $table = Platform::USERS_TABLE;
-    private $merchant_code = Settings::MARCHANT_CODE;
+    private $marchant_code = Settings::MARCHANT_CODE;
 
     public function __construct(AnsofraDto $dto = null) {
         $this->dto = $dto;
@@ -19,7 +19,7 @@ class ConfirmTransactions {
     public function process() {
 
         $dataToCheck = [
-            "merchant_code" => $this->merchant_code
+            "marchant_code" => $this->marchant_code
         ];
 
         $ch = curl_init();
@@ -68,7 +68,7 @@ class ConfirmTransactions {
                 "email" => $user["email"],
                 "mac" => $user["mac"],
                 "hashed_mac" => $user["hashed_mac"],
-                "merchant_code" => $this->merchant_code
+                "marchant_code" => $this->marchant_code
             ];
 
             $dataToUpdate = [

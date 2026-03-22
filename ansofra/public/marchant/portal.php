@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ?>
     <script>
         document.getElementById("plan-containner").innerHTML=`
-            <div style="text-align:center;"><img src="loader.gif" style="max-width:50px; max-height:50px;" /></div>
+            <div style="text-align:center;"><img src="/newdichlan/ansofra/public/marchant/loader.gif" style="max-width:50px; max-height:50px;" /></div>
         `;
     </script>
     <?php
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Phone Number:</label>
                     <input type="number" name="phone" placeholder="Phone Number" required />
                     <br><br>
-                    <button type="submit" class="btn btn-secondary" onclick="loading()">Pay</button>
+                    <button id="paybtn" type="submit" class="btn btn-secondary" onclick="loading()">Pay</button>
                 </form>
             <?php else: ?>
                 <p>Failed to load plans</p>
@@ -161,9 +161,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </footer>
 <script>
     function loading(){
-        document.getElementById("plan-container").innerHTML=`
+        document.getElementById("paybtn").innerHTML=`
             <div>
-                <img src="loader.gif" style="max-width:50px; max-height:50px;" />
+                <img src="/newdichlan/ansofra/public/marchant/loader.gif" style="max-width:50px; max-height:50px;" />
             </div>
         `;
     }

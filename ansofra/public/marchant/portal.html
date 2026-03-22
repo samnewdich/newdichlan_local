@@ -58,7 +58,8 @@ async function loadPlans() {
         }
 
         let output = `
-            <form id="pay_form">
+            <form id="pay_form" class="form-group">
+                <label>Choose a Plan:</label>
                 <select id="plans_id">
         `;
 
@@ -71,8 +72,12 @@ async function loadPlans() {
         });
 
         output += `
-                </select><br/><br/>
-                <button type="submit">Pay</button>
+                </select>
+                <br><br>
+                <label>Phone Number:</label>
+                <input type="number" name="phone" placeholder="Phone Number" />
+                <br/><br/>
+                <button type="submit" class="btn btn-primary">Pay</button>
             </form>
         `;
 

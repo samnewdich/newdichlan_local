@@ -103,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div id="plan-container">
             <?php if ($plansData && $plansData['status'] === "success"): ?>
                 <form method="POST" class="form-group">
+                    <label>Choose a Plan:</label>
                     <select name="plans_id">
                         <?php foreach ($plansData['response'] as $plan): ?>
                             <option value="<?= $plan['plans_id'] ?>">
@@ -111,7 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endforeach; ?>
                     </select>
                     <br><br>
-                    <button type="submit" class="btn btn-secondary">Pay</button>
+                    <label>Phone Number:</label>
+                    <input type="number" name="phone" placeholder="Phone Number" />
+                    <br><br>
+                    <button type="submit" class="btn btn-secondary" onclick="loading()">Pay</button>
                 </form>
             <?php else: ?>
                 <p>Failed to load plans</p>
@@ -155,6 +159,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p>&copy; <?= date('Y') ?> Newdich Technology</p>
     </div>
 </footer>
-
+<script>
+    function loading(){
+        document.getElementById("plan-container").innerHTML=`
+            <div>
+                <img src="loader.gif" style="max-width:50px; max-height:50px;" />
+            </div>
+        `;
+    }
+</script>
 </body>
 </html>

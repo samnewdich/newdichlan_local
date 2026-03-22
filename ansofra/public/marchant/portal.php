@@ -125,11 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- PAYMENT RESULT -->
         <div id="pay-container">
-            <script>
-                document.getElementById("plan-container").style.display="none";
-            </script>
             <?php if ($selectedPlan && !empty($accounts)): ?>
 
+                <script>
+                    document.getElementById("plan-container").style.display="none";
+                </script>
                 <?php
                     $price = ($selectedPlan['discount'] && $selectedPlan['price'] >= $selectedPlan['discount'])
                         ? $selectedPlan['price'] - $selectedPlan['discount']

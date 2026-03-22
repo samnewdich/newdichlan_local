@@ -8,130 +8,80 @@ use NewdichSchema\Settings;
 
 class GetReservedAccount {
 
-    private $dto;
-    private $marchant_code = Settings::MARCHANT_CODE;
-    private $table = Platform::RESERVED_TABLE;
+    private AnsofraDto $dto;
+    private string $marchant_code;
+    private string $table;
 
     public function __construct(AnsofraDto $dto){
         $this->dto = $dto;
+        $this->marchant_code = Settings::MARCHANT_CODE;
+        $this->table = Platform::RESERVED_TABLE;
     }
 
-    public function process(){
-
+    public function process(): array
+    {
         //Validate MAC
         $mac = strtolower(trim($this->dto->mac ?? ""));
 
         if (in_array($mac, ["", "unknown", "null", "undefined"])) {
-            return json_encode([
-                "status" => "failed",
-                "response" => "Invalid MAC address"
-            ]);
+            return $this->fail("Invalid MAC address");
         }
 
+        //Query DB
+        $migration = new Migration(null, $this->table);
+
         $dataToCheck = [
-            "mac" => $this->dto->mac,
+            "mac" => $mac, //FIXED
             "marchant_code" => $this->marchant_code
         ];
 
-        $migration = new Migration(null, $this->table);
         $get = $migration->get($dataToCheck, 0, 50);
+        $decoded = json_decode($get, true);
 
-        $getDec = json_decode($get, true);
-
-        //Check decode
-        if (!is_array($getDec) || !isset($getDec["status"])) {
-            return json_encode([
-                "status" => "failed",
-                "response" => "Invalid response from database"
-            ]);
+        if (!$this->isValidResponse($decoded)) {
+            return $this->fail("Invalid response from database");
         }
 
-        if ($getDec["status"] === "success") {
-
-            $response = $getDec["response"];
-            $allReserved = [];
-
-            foreach ($response as $eachAcc) {
-
-                $allReserved[] = [
-                    "account_name" => $eachAcc["account_name"] ?? "",
-                    "account_number" => $eachAcc["account_number"] ?? "",
-                    "bank" => [
-                        "name" => $eachAcc["bank"] ?? ""
-                    ]
-                ];
-            }
-
-            return json_encode([
-                "status" => "success",
-                "response" => $allReserved
-            ], JSON_PRETTY_PRINT);
+        if ($decoded["status"] !== "success") {
+            return $decoded; // pass-through
         }
 
-        return $get;
-    }
-}
-?>
+        // Format response
+        $accounts = array_map(function ($acc) {
+            return [
+                "account_name"   => $acc["account_name"] ?? "",
+                "account_number" => $acc["account_number"] ?? "",
+                "bank" => [
+                    "name" => $acc["bank"] ?? ""
+                ]
+            ];
+        }, $decoded["response"]);
 
-
-
-
-
-
-
-
-
-
-<?php
-/*
-namespace NewdichApp\Query;
-use NewdichDto\AnsofraDto;
-use NewdichSchema\Migration;
-use NewdichSchema\Platform;
-use NewdichSchema\Settings;
-
-class GetReservedAccount{
-    private $dto;
-    private $marchant_code = Settings::MARCHANT_CODE;
-    private $table = Platform::RESERVED_TABLE;
-
-    public function __construct(AnsofraDto $dto){
-        $this->dto = $dto;
+        return $this->success($accounts);
     }
 
-    public function process(){
-        $dataToCheck = [
-            "mac" => $this->dto->mac,
-            "marchant_code"=>$this->marchant_code
+    // ===== HELPERS =====
+
+    private function success($data): array
+    {
+        return [
+            "status" => "success",
+            "response" => $data
         ];
+    }
 
-        $newMigration = new Migration(null, $this->table);
-        $get = $newMigration->get($dataToCheck, 0, 10);
-        $getDec = json_decode($get, true);
-        if($getDec["status"] ==="success"){
-            $resposne = $getDec["response"];
-            $allReservec = [];
-            for($i=0; $i < count($resposne); $i++){
-                $eachAcc = $resposne[$i];
-                $eachArr = [
-                    "account_name" => $eachAcc["account_name"];
-                    "account_number" => $eachAcc["account_number"];
-                    "bank" => [
-                        "name" => $eachAcc["bank"];
-                    ];
-                ];
-                $allReservec[] = $eachArr;
-            }
+    private function fail(string $message): array
+    {
+        return [
+            "status" => "failed",
+            "response" => $message
+        ];
+    }
 
-            return json_encode([
-                "status"=>"success",
-                "response"=>$allReservec
-            ], JSON_PRETTY_PRINT);
-        }
-        else{
-            return $get;
-        }
+    private function isValidResponse($data): bool
+    {
+        return is_array($data) && isset($data["status"]);
     }
 }
-*/
+
 ?>

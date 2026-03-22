@@ -1,12 +1,13 @@
 <?php
 namespace NewdichControllerApp;
+
 use NewdichDto\AnsofraDto;
 use NewdichMiddleware\Index;
 use NewdichApp\Query\GetReservedAccount;
 
 header('Content-Type: application/json');
 
-// Support both form-data and JSON
+// ===== GET INPUT =====
 $incoming = $_POST;
 
 if (empty($incoming)) {
@@ -15,71 +16,33 @@ if (empty($incoming)) {
 
 $incoming = is_array($incoming) ? $incoming : [];
 
+// ===== CLEAN INPUT =====
+$middleware = new Index();
 $cleanData = [];
-$newMiddleware = new Index();
 
 foreach ($incoming as $k => $v) {
     $cleanData[$k] = ($k === "password")
-        ? $newMiddleware->hashData($v)
-        : $newMiddleware->cleanData($v);
+        ? $middleware->hashData($v)
+        : $middleware->cleanData($v);
 }
 
 try {
-    $newDto = new AnsofraDto($cleanData);
-    $newRegister = new GetReservedAccount($newDto);
+    $dto = new AnsofraDto($cleanData);
+    $service = new GetReservedAccount($dto);
 
-    $result = $newRegister->process();
+    $result = $service->process();
 
-    // Ensure consistent output
-    if (is_string($result)) {
-        echo $result;
-    } else {
-        echo json_encode($result);
-    }
+    //ALWAYS JSON HERE
+    echo json_encode($result);
 
 } catch (\Throwable $e) {
     echo json_encode([
         "status" => "failed",
-        "response" => $e->getMessage()
+        "response" => "Server error",
+        "error" => $e->getMessage() // remove in production if needed
     ]);
 }
 
 exit;
-?>
 
-
-
-
-
-
-
-
-
-
-
-<?php
-/*
-namespace NewdichControllerApp;
-use NewdichDto\AnsofraDto;
-use NewdichMiddleware\Index;
-use NewdichApp\Query\GetReservedAccount;
-
-$incoming = json_decode(file_get_contents("php://input"), true);
-$cleanData = [];
-$newMiddleware = new Index();
-
-foreach($incoming as $k => $v){
-    if($k ==="password"){
-        $cleanData[$k] = $newMiddleware->hashData($v);
-    }
-    else{
-        $cleanData[$k] = $newMiddleware->cleanData($v);
-    }
-}
-
-$newDto = new AnsofraDto($cleanData);
-$newRegister = new GetReservedAccount($newDto);
-echo $newRegister->process();
-exit;
-*/
 ?>

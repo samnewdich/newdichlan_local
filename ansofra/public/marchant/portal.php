@@ -53,12 +53,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Try register
     $register = postRequest("$BASE/register", $body);
 
-    if ($register['status'] === "success") {
+    /*if ($register['status'] === "success") {
         $accounts = $register['response'];
     } else {
         // fallback
         $login = postRequest("$BASE/getreserved", ["mac" => $mac]);
         if ($login['status'] === "success") {
+            $accounts = $login['response'];
+        }
+    }
+    */
+
+    if ($register['status'] === "success") {
+        $accounts = $register['response'];
+    } else {
+        $login = postRequest("$BASE/getreserved", ["mac" => $mac]);
+
+        if ($login && $login['status'] === "success") {
             $accounts = $login['response'];
         }
     }
@@ -145,7 +156,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php foreach ($accounts as $acc): ?>
                         <div>
                             <p>Bank : <strong><?= $acc['bank']['name'] ?></strong></p>
-                            <p>Account Number : <span onclick="copyText(<?= $acc['account_number'] ?>)"><?= $acc['account_number'] ?></span></p>
+                            <p>Account Number : 
+                                <span onclick="copyText('<?= $acc['account_number'] ?>')">
+                                    <?= $acc['account_number'] ?>
+                                </span>
+                            </p>
                             <p>Account Name : <?= $acc['account_name'] ?></p>
                             <hr>
                         </div>

@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         "device_name" => $device,
         "date_created" => $current_time,
         "current_time" => $current_time,
-        "phone" => ""
+        "phone" => htmlspecialchars($_POST["phone"])
     ];
 
     // Try register

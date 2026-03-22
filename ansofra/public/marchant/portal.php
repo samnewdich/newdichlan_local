@@ -114,9 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <br><br>
                     <label>Phone Number:</label>
                     <input type="number" name="phone" placeholder="Phone Number" required />
-                    Note: Phone number is just to create a account for you.
+                    <span style="font-size:12px;">Note: Phone number is just to create a account for you.</span>
                     <br><br>
-                    <button id="paybtn" type="submit" class="btn btn-secondary" onclick="loading()">Pay</button>
+                    <span id="paybtn"><button type="submit" class="btn btn-secondary" onclick="loading()">Pay</button></span>
                 </form>
             <?php else: ?>
                 <p>Failed to load plans</p>

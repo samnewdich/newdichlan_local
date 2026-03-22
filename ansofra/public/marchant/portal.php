@@ -32,7 +32,13 @@ $selectedPlan = null;
 $accounts = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
+    ?>
+    <script>
+        document.getElementById("plan-containner").innerHTML=`
+            <div style="text-align:center;"><img src="loader.gif" style="max-width:50px; max-height:50px;" /></div>
+        `;
+    </script>
+    <?php
     $plans_id = $_POST['plans_id'];
 
     $body = [
@@ -63,6 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($planRes['status'] === "success") {
         $selectedPlan = $planRes['response'][0];
     }
+
+    ?>
+    <script>
+        document.getElementById("plan-containner").innerHTML=``;
+    </script>
+    <?php
 }
 ?>
 
@@ -79,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <header class="portal-header">
     <div class="container">
         <h1>Welcome to <span>Newdich LAN</span></h1>
+        <p>Enjoy Unlimited 24/7 Internet Access</p>
         <p>Choose a plan to get online</p>
     </div>
 </header>
@@ -87,47 +100,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
         <?php //echo $plansData; ?>
         <!-- PLAN SELECT -->
-        <?php if ($plansData && $plansData['status'] === "success"): ?>
-            <form method="POST" class="form-group">
-                <select name="plans_id">
-                    <?php foreach ($plansData['response'] as $plan): ?>
-                        <option value="<?= $plan['plans_id'] ?>">
-                            <?= $plan['plan'] ?> - <?= $plan['currency'] ?> <?= $plan['price'] ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <br><br>
-                <button type="submit" class="btn btn-secondary">Pay</button>
-            </form>
-        <?php else: ?>
-            <p>Failed to load plans</p>
-        <?php endif; ?>
+        <div id="plan-container">
+            <?php if ($plansData && $plansData['status'] === "success"): ?>
+                <form method="POST" class="form-group">
+                    <select name="plans_id">
+                        <?php foreach ($plansData['response'] as $plan): ?>
+                            <option value="<?= $plan['plans_id'] ?>">
+                                <?= $plan['plan'] ?> - <?= $plan['currency'] ?> <?= $plan['price'] ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <br><br>
+                    <button type="submit" class="btn btn-secondary">Pay</button>
+                </form>
+            <?php else: ?>
+                <p>Failed to load plans</p>
+            <?php endif; ?>
+        </div>
 
         <!-- PAYMENT RESULT -->
-        <?php if ($selectedPlan && !empty($accounts)): ?>
+        <div id="pay-container">
+            <?php if ($selectedPlan && !empty($accounts)): ?>
 
-            <?php
-                $price = ($selectedPlan['discount'] && $selectedPlan['price'] >= $selectedPlan['discount'])
-                    ? $selectedPlan['price'] - $selectedPlan['discount']
-                    : $selectedPlan['price'];
-            ?>
+                <?php
+                    $price = ($selectedPlan['discount'] && $selectedPlan['price'] >= $selectedPlan['discount'])
+                        ? $selectedPlan['price'] - $selectedPlan['discount']
+                        : $selectedPlan['price'];
+                ?>
 
-            <div style="margin-top:20px;">
-                <h3><?= $selectedPlan['plan'] ?></h3>
-                <p><strong><?= $selectedPlan['currency'] ?> <?= $price ?></strong></p>
-                <p>Make payment into any account below:</p>
+                <div style="margin-top:20px;">
+                    <h3><?= $selectedPlan['plan'] ?></h3>
+                    <p><strong><?= $selectedPlan['currency'] ?> <?= $price ?></strong></p>
+                    <p>Make payment into any account below:</p>
 
-                <?php foreach ($accounts as $acc): ?>
-                    <div>
-                        <p><strong><?= $acc['bank']['name'] ?></strong></p>
-                        <p><?= $acc['account_number'] ?></p>
-                        <p><?= $acc['account_name'] ?></p>
-                        <hr>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+                    <?php foreach ($accounts as $acc): ?>
+                        <div>
+                            <p><strong><?= $acc['bank']['name'] ?></strong></p>
+                            <p><?= $acc['account_number'] ?></p>
+                            <p><?= $acc['account_name'] ?></p>
+                            <hr>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
 
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
 
     </div>
 </main>

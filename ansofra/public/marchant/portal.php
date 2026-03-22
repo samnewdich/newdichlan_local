@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                     <br><br>
                     <label>Phone Number:</label>
-                    <input type="number" name="phone" placeholder="Phone Number" />
+                    <input type="number" name="phone" placeholder="Phone Number" required />
                     <br><br>
                     <button type="submit" class="btn btn-secondary" onclick="loading()">Pay</button>
                 </form>

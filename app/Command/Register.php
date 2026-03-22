@@ -16,6 +16,13 @@ class Register{
     }
 
     public function process(){
+        if(strtolower($this->dto->mac) ==="unknown" || strtolower($this->dto->mac) ==="" || strtolower($this->dto->mac) ==="null" || strtolower($this->dto->mac) ==="undefined" || strtolower($this->dto->mac) ===" "){
+            return json_encode([
+                "status"=>"failed",
+                "response"=>"Your Device is hiding identity. You are probably using VPN or a MAC blocker Application"
+            ], JSON_PRETTY_PRINT);
+        }
+
         $emailToUse = "lan_". $this->marchant_code . "_". md5($this->dto->mac) ."@newdich.tech";
         $fullnameToUse = "lan_". $this->marchant_code . " ". md5($this->dto->mac);
         $dataToSave = [

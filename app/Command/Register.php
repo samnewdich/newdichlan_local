@@ -78,10 +78,17 @@ class Register{
                     $explodeFullname = explode(' ', $fullnameToUse);
                     $dataToGen = [
                         "email" => $emailToUse,
+                        "fullname" => $fullnameToUse,
                         "first_name" => $explodeFullname[1],
                         "last_name" => $explodeFullname[0],
                         "phone" => $this->dto->phone ? $this->dto->phone : "",
-                        "country" => "NG"
+                        "country" => "NG",
+                        "mac" => $this->dto->mac,
+                        "hashed_mac" => md5($this->dto->mac),
+                        "last_ip" => $this->dto->last_ip ? $this->dto->last_ip : "",
+                        "marchant_code" => $this->marchant_code,
+                        "date_created" => $this->dto->date_created,
+                        "current_time" => $this->dto->date_created
                     ];
                     $ch = curl_init();
                     curl_setopt_array($ch, [

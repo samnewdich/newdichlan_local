@@ -125,6 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- PAYMENT RESULT -->
         <div id="pay-container">
+            <script>
+                document.getElementById("plan-container").style.display="none";
+            </script>
             <?php if ($selectedPlan && !empty($accounts)): ?>
 
                 <?php
@@ -133,19 +136,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         : $selectedPlan['price'];
                 ?>
 
-                <div style="margin-top:20px;">
-                    <h3><?= $selectedPlan['plan'] ?></h3>
-                    <p><strong><?= $selectedPlan['currency'] ?> <?= $price ?></strong></p>
+                <div style="margin-top:20px; padding:5px;">
+                    <h3>Subscription Plan : <?= $selectedPlan['plan'] ?></h3>
+                    <p><strong>Device : <?= $mac ?></strong></p>
+                    <p><strong>Price : <?= $selectedPlan['currency'] ?> <?= $price ?></strong></p>
                     <p>Make payment into any account below:</p>
 
                     <?php foreach ($accounts as $acc): ?>
                         <div>
-                            <p><strong><?= $acc['bank']['name'] ?></strong></p>
-                            <p><?= $acc['account_number'] ?></p>
-                            <p><?= $acc['account_name'] ?></p>
+                            <p>Bank : <strong><?= $acc['bank']['name'] ?></strong></p>
+                            <p>Account Number : <span onclick="copyText(<?= $acc['account_number'] ?>)"><?= $acc['account_number'] ?></span></p>
+                            <p>Account Name : <?= $acc['account_name'] ?></p>
                             <hr>
                         </div>
                     <?php endforeach; ?>
+                    <p style="color:red; font-size:12px;">Note: This subscription is can only be used on this device</p>
                 </div>
 
             <?php endif; ?>
@@ -167,6 +172,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <img src="/newdichlan/ansofra/public/marchant/loader.gif" style="max-width:50px; max-height:50px;" />
             </div>
         `;
+    }
+
+    async function copyText(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            alert("Copied successfully!");
+        } catch (err) {
+            console.error("Copy failed:", err);
+        }
     }
 </script>
 </body>

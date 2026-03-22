@@ -154,7 +154,15 @@ class Register{
                 }
             }
             else{
-                return $response;
+                //Then he's likely to have registered, now fetch his data
+                $dataToFetch = [
+                    "email" => $emailToUse,
+                    "mac" => $this->dto->mac
+                ];
+
+                $newRsv = new Migration(null, $this->reservedTable);
+                $ddd = $newRsv->get($dataToFetch, 0, 1);
+                return $ddd;
             }
         }
     }

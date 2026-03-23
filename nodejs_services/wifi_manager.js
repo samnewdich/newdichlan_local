@@ -7,45 +7,78 @@ const { exec } = require('child_process');
 const axios = require('axios');
 
 // ───────── CONFIG ─────────
-const DOWNSTREAM_IFACE = "eth0";       // Hotspot interface (AX55)
-const UPSTREAM_IFACE   = "wlan0";      // Internet interface (modem/Starlink)
+const DOWNSTREAM_IFACE = "eth0";       // Hotspot interface
+const UPSTREAM_IFACE   = "wlan0";      // Internet interface
 const GATEWAY_IP       = "192.168.200.1";
 const SUBNET           = "192.168.200.0/24";
 
-// Local API (on LAMP server running on Kali)
+// Local API
 const CHECK_API = "http://192.168.200.1:8080/newdichlan/ansofra/api/checkpaid";
 
-// Session store to prevent hotspot-sharing
-const sessionStore = new Map(); // Key: MAC, Value: { ip, connectedAt }
+// Session store (MAC → session)
+const sessionStore = new Map();
 
-// ───────── BLOCK / UNBLOCK FUNCTIONS ─────────
-function blockDevice(ip, mac) {
-    exec(`iptables -C FORWARD -s ${ip} -j DROP || iptables -A FORWARD -s ${ip} -j DROP`, (err) => {
-        if (err) console.error(`Error blocking ${mac} (${ip}):`, err.message);
-        else console.log(`BLOCKED → ${mac} (${ip})`);
-    });
+// ARP cache (IP → MAC)
+let arpCache = {};
+
+
+// ────────────────────────────────────────────────
+// INITIAL IPTABLES SETUP
+// ────────────────────────────────────────────────
+function setupIptables() {
+    console.log("Resetting iptables...");
+
+    exec("iptables -F");
+    exec("iptables -t nat -F");
+
+    // Allow established connections
+    exec("iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT");
+
+    // NAT for internet access
+    exec(`iptables -t nat -A POSTROUTING -o ${UPSTREAM_IFACE} -j MASQUERADE`);
+
+    console.log("iptables ready.");
 }
 
-function unblockDevice(ip, mac) {
-    // Remove previous drop rule
-    exec(`iptables -D FORWARD -s ${ip} -j DROP || true`, (err) => {
-        if (err) console.error(`Error removing DROP for ${mac} (${ip}):`, err.message);
-    });
+setupIptables();
 
-    // Allow forwarding to internet
-    exec(`iptables -C FORWARD -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -m state --state RELATED,ESTABLISHED -j ACCEPT || \
-          iptables -I FORWARD 1 -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+
+// ────────────────────────────────────────────────
+// BLOCK DEVICE
+// ────────────────────────────────────────────────
+function blockDevice(ip, mac) {
+    exec(`iptables -C FORWARD -s ${ip} -j DROP || iptables -A FORWARD -s ${ip} -j DROP`,
         (err) => {
-            if (err) console.error(`Error allowing ${mac} (${ip}):`, err.message);
+            if (err) console.error(`Block error ${mac} (${ip}):`, err.message);
+            else console.log(`BLOCKED → ${mac} (${ip})`);
+        }
+    );
+}
+
+
+// ────────────────────────────────────────────────
+// UNBLOCK DEVICE
+// ────────────────────────────────────────────────
+function unblockDevice(ip, mac) {
+
+    // Remove DROP rule
+    exec(`iptables -D FORWARD -s ${ip} -j DROP || true`);
+
+    // Allow full internet access (IMPORTANT FIX)
+    exec(`iptables -C FORWARD -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT || \
+          iptables -I FORWARD 1 -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT`,
+        (err) => {
+            if (err) console.error(`Unblock error ${mac} (${ip}):`, err.message);
             else console.log(`UNBLOCKED → ${mac} (${ip})`);
         }
     );
 }
 
-// ───────── UPDATE ARP CACHE ─────────
-let arpCache = {};
 
-setInterval(() => {
+// ────────────────────────────────────────────────
+// UPDATE ARP CACHE
+// ────────────────────────────────────────────────
+function updateArpCache() {
     exec(`arp -i ${DOWNSTREAM_IFACE} -a`, (err, stdout) => {
         if (err) return;
 
@@ -55,48 +88,71 @@ setInterval(() => {
 
             const ip = match[1];
             const mac = match[2].toUpperCase();
+
             arpCache[ip] = mac;
         });
     });
-}, 5000); // every 5 seconds
+}
 
-// ───────── DEVICE HANDLER ─────────
+setInterval(updateArpCache, 5000);
+
+
+// ────────────────────────────────────────────────
+// HANDLE DEVICE
+// ────────────────────────────────────────────────
 async function handleDevice(ip, mac) {
-    // Skip gateway
+
     if (ip === GATEWAY_IP) return;
 
-    // Anti-hotspot sharing: block if MAC already in session
-    if (sessionStore.has(mac)) {
+    const existing = sessionStore.get(mac);
+
+    // Detect hotspot sharing (same MAC, different IP)
+    if (existing && existing.ip !== ip) {
+        console.log(`HOTSPOT SHARING DETECTED → ${mac}`);
         blockDevice(ip, mac);
         return;
     }
 
-    // New device → add to session
-    sessionStore.set(mac, { ip, connectedAt: Date.now() });
+    // Update session
+    sessionStore.set(mac, {
+        ip,
+        connectedAt: Date.now()
+    });
 
-    // Check subscription status
+    // Check subscription
     try {
-        const res = await axios.get(`${CHECK_API}?mac=${encodeURIComponent(mac)}&current_time=${Math.floor(Date.now()/1000)}`);
-        const { sub_status } = res.data;
+        const res = await axios.get(
+            `${CHECK_API}?mac=${encodeURIComponent(mac)}&current_time=${Math.floor(Date.now()/1000)}`
+        );
+
+        const sub_status = res.data.sub_status;
 
         if (sub_status === "active") {
             unblockDevice(ip, mac);
         } else {
             blockDevice(ip, mac);
         }
+
     } catch (err) {
-        console.error(`API error for ${mac} (${ip}):`, err.message);
-        blockDevice(ip, mac); // fail-safe
+        console.error(`API ERROR → ${mac} (${ip}):`, err.message);
+        blockDevice(ip, mac);
     }
 }
 
-// ───────── MAIN LOOP ─────────
+
+// ────────────────────────────────────────────────
+// MAIN LOOP
+// ────────────────────────────────────────────────
 setInterval(() => {
     for (const ip in arpCache) {
         const mac = arpCache[ip];
         handleDevice(ip, mac);
     }
-}, 10000); // every 10 seconds
+}, 10000);
 
-// ───────── START MESSAGE ─────────
-console.log("WiFi Manager running... Anti-hotspot sharing enabled, subscription check active.");
+
+// ────────────────────────────────────────────────
+// START MESSAGE
+// ────────────────────────────────────────────────
+console.log("WiFi Manager running...");
+console.log("Subscription control + Anti-hotspot sharing ACTIVE");

@@ -27,7 +27,7 @@ function postRequest($url, $data = [])
 }
 
 // ===== GET URL PARAMS =====
-$mac = strtolower(trim($_GET['mac'] ?? ''));
+$mac = trim($_GET['mac'] ?? '');
 $ip = $_GET['ip'] ?? '';
 $device = $_GET['device'] ?? '';
 $current_time = $_GET['current_time'] ?? date("Y-m-d H:i:s");

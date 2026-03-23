@@ -9,7 +9,7 @@ const axios = require('axios');
 const DOWNSTREAM_IFACE = "eth0";       // Hotspot interface
 const UPSTREAM_IFACE   = "wlan0";      // Internet interface
 const GATEWAY_IP       = "192.168.200.1"; 
-const CHECK_PAID_API   = "https://lan.newdich.tech/api/checkpaid";
+const CHECK_PAID_API   = "http://192.168.200.1:8080/newdichlan/ansofra/api/checkpaid";
 const PORT             = 80;           // Local HTTP port (portal)
 
 // MAC → IP mapping (dynamic ARP cache)

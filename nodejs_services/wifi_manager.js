@@ -1,48 +1,45 @@
-// ────────────────────────────────────────────────
-// WiFi Manager (Subscription-Based Access Control)
-// Maintained by NEWDICH TECHNOLOGY
-// ────────────────────────────────────────────────
-
 const { exec } = require('child_process');
 const axios = require('axios');
 
-// ───────── CONFIG ─────────
-const DOWNSTREAM_IFACE = "eth0";     // Hotspot interface
-const UPSTREAM_IFACE   = "wlan0";    // Internet interface
-const GATEWAY_IP       = "192.168.200.1";
-const SUBNET           = "192.168.200.0/24";
+const IFACE = "eth0";
+const API = "http://192.168.200.1:8080/newdichlan/ansofra/api/checkpaid";
 
-const CHECK_API = "http://192.168.200.1:8080/newdichlan/ansofra/api/checkpaid"; // returns { sub_status: "active" | "inactive" }
-
-// Cache
+let deviceState = {};
 let arpCache = {};
 
-
-//Block and unblock
-async function blockDevice(ip) {
-    exec(`iptables -C FORWARD -s ${ip} -j DROP || iptables -A FORWARD -s ${ip} -j DROP`, (err) => {
-        if (err) console.error(`Error blocking ${ip}:`, err.message);
-        else console.log(`BLOCKED → ${ip}`);
-    });
+function run(cmd) {
+  exec(cmd, () => {});
 }
 
-async function unblockDevice(ip) {
-    exec(`iptables -D FORWARD -s ${ip} -j DROP || true`, (err) => {
-        if (err) console.error(`Error removing DROP for ${ip}:`, err.message);
-    });
+// BLOCK
+function block(mac) {
+  if (deviceState[mac] === "blocked") return;
 
-    exec(`iptables -C FORWARD -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT || \
-          iptables -I FORWARD 1 -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT`, (err) => {
-        if (err) console.error(`Error allowing ${ip}:`, err.message);
-        else console.log(`UNBLOCKED → ${ip}`);
-    });
+  run(`iptables -C FORWARD -m mac --mac-source ${mac} -j DROP || \
+       iptables -A FORWARD -m mac --mac-source ${mac} -j DROP`);
+
+  deviceState[mac] = "blocked";
+  console.log("BLOCKED:", mac);
 }
 
-// ────────────────────────────────────────────────
-// UPDATE ARP CACHE (IP → MAC)
-// ────────────────────────────────────────────────
+// UNBLOCK
+function unblock(mac, ip) {
+  if (deviceState[mac] === "active") return;
+
+  // Remove block
+  run(`iptables -D FORWARD -m mac --mac-source ${mac} -j DROP || true`);
+
+  // Bind MAC + IP (anti-spoof)
+  run(`iptables -C FORWARD -s ${ip} -m mac --mac-source ${mac} -j ACCEPT || \
+       iptables -I FORWARD 1 -s ${ip} -m mac --mac-source ${mac} -j ACCEPT`);
+
+  deviceState[mac] = "active";
+  console.log("UNBLOCKED:", mac, ip);
+}
+
+// ARP SCAN
 setInterval(() => {
-  exec(`arp -i ${DOWNSTREAM_IFACE} -a`, (err, stdout) => {
+  exec(`arp -i ${IFACE} -a`, (err, stdout) => {
     if (err) return;
 
     stdout.split("\n").forEach(line => {
@@ -50,52 +47,32 @@ setInterval(() => {
       if (match) {
         const ip = match[1];
         const mac = match[2].toUpperCase();
-        arpCache[ip] = mac;
+        arpCache[mac] = ip;
       }
     });
   });
-}, 10000);
+}, 5000);
 
-// ────────────────────────────────────────────────
-// SUBSCRIPTION CHECK LOOP
-// ────────────────────────────────────────────────
+// CHECK LOOP
 setInterval(async () => {
-
-  for (const ip in arpCache) {
-
-    const mac = arpCache[ip];
-
-    // Skip gateway
-    if (ip === GATEWAY_IP) continue;
+  for (const mac in arpCache) {
+    const ip = arpCache[mac];
 
     try {
-      const res = await axios.get(
-        `${CHECK_API}?mac=${encodeURIComponent(mac)}&time=${Math.floor(Date.now()/1000)}`
-      );
+      const res = await axios.get(`${API}?mac=${mac}&ip=${ip}&current_time=${Math.floor(Date.now() / 1000)}`);
 
-      const { sub_status } = res.data;
+      const { sub_status, session_valid } = res.data;
 
-      //ACTIVE → UNBLOCK
-      if (sub_status === "active") {
-        unblockDevice(ip);
+      if (sub_status === "active" && session_valid === true) {
+        unblock(mac, ip);
+      } else {
+        block(mac);
       }
 
-      //INACTIVE → BLOCK
-      else {
-        blockDevice(ip);
-      }
-
-    } catch (err) {
-      console.error(`API ERROR → ${mac}:`, err.message);
-
-      // Fail-safe: block if API fails
-      blockDevice(ip);
+    } catch {
+      block(mac);
     }
   }
+}, 10000);
 
-}, 10000); // every 10 seconds
-
-// ────────────────────────────────────────────────
-// START MESSAGE
-// ────────────────────────────────────────────────
-console.log("WiFi Manager running...");
+console.log("Secure WiFi Manager running...");

@@ -1,0 +1,9 @@
+CheckPaid.php
+CheckPaidController.php
+portal.php
+GetPlans.php
+GetPlanscontroller.php
+GetReservedAccountController.php
+GetReservedAccount.php
+ConfirmTransactions.php
+wifi_manager.js

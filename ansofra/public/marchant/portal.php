@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <?php foreach ($accounts as $acc): ?>
                         <div>
-                            <p>Bank : <strong><?= $acc['bank']['name'] ?></strong></p>
+                            <p>Bank : <strong><?= $acc['bank']['name'] ?? $acc['bank'] ?></strong></p>
                             <p>Account Number : 
                                 <span onclick="copyText('<?= $acc['account_number'] ?>')">
                                     <?= $acc['account_number'] ?>
@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <hr>
                         </div>
                     <?php endforeach; ?>
-                    <p style="color:red; font-size:12px;">Note: This subscription is can only be used on this device.</p>
+                    <p style="color:red; font-size:12px;">Note: This subscription can only be used on this device.</p>
                     <p style="color:red; font-size:12px;">Note: Do not share your hotspot with any other device, else both you and them would be blocked</p>
                 </div>
 

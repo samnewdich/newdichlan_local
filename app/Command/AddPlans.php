@@ -10,7 +10,7 @@ class AddPlans {
 
     private $dto;
     private $table = Platform::PLANS_TABLE;
-    private $merchant_code = Settings::MERCHANT_CODE;
+    private $marchant_code = Settings::MARCHANT_CODE;
 
     public function __construct(AnsofraDto $dto = null) {
         $this->dto = $dto;
@@ -19,7 +19,7 @@ class AddPlans {
     public function process() {
 
         $payload = [
-            "merchant_code" => $this->merchant_code
+            "marchant_code" => $this->marchant_code
         ];
 
         $ch = curl_init();
@@ -60,7 +60,7 @@ class AddPlans {
 
         // Fetch all existing plans ONCE
         $existingRaw = $migration->get(
-            ["merchant_code" => $this->merchant_code],
+            ["marchant_code" => $this->marchant_code],
             0,
             1000
         );
@@ -71,13 +71,13 @@ class AddPlans {
         // Build lookup map
         $planMap = [];
         foreach ($existingPlans as $p) {
-            $key = $p["plan"] . "_" . $p["merchant_code"];
+            $key = $p["plan"] . "_" . $p["marchant_code"];
             $planMap[$key] = $p;
         }
 
         foreach ($plansFromApi as $plan) {
 
-            $key = $plan["plan"] . "_" . $plan["merchant_code"];
+            $key = $plan["plan"] . "_" . $plan["marchant_code"];
 
             $updateData = [
                 "duration" => $plan["duration"],
@@ -91,7 +91,7 @@ class AddPlans {
                 // UPDATE
                 $migration->edit($updateData, [
                     "plan" => $plan["plan"],
-                    "merchant_code" => $plan["merchant_code"]
+                    "marchant_code" => $plan["marchant_code"]
                 ]);
             } else {
                 // INSERT
@@ -102,7 +102,7 @@ class AddPlans {
                     "price" => $plan["price"],
                     "currency" => $plan["currency"],
                     "discount" => $plan["discount"],
-                    "merchant_code" => $plan["merchant_code"]
+                    "marchant_code" => $plan["marchant_code"]
                 ]);
             }
         }
@@ -177,7 +177,7 @@ class AddPlans {
 
             $existplan = [
                 "plan" => $plan["plan"],
-                "merchant_code" => $plan["merchant_code"]
+                "marchant_code" => $plan["marchant_code"]
             ];
 
             $check = $newMigration->get($existplan, 0, 1);
@@ -204,7 +204,7 @@ class AddPlans {
                     "price" => $plan["price"],
                     "currency" => $plan["currency"],
                     "discount" => $plan["discount"],
-                    "merchant_code" => $plan["merchant_code"]
+                    "marchant_code" => $plan["marchant_code"]
                 ];
 
                 $newMigration->saveUnique("plan", $plan["plan"], $dataToSave);

@@ -146,7 +146,7 @@ elseif($url === $usersArea."/geteachplans" || $url === $usersArea."/geteachplans
 }
 
 elseif($url === $usersArea."/getreserved" || $url === $usersArea."/getreserved"."/"){
-    require_once __DIR__ . $appController."/GetReservedController.php";
+    require_once __DIR__ . $appController."/GetReservedAccountController.php";
     exit;
 }
 

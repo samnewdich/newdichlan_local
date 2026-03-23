@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <br><br>
                     <label>Phone Number:</label>
                     <input type="number" name="phone" placeholder="Phone Number" required />
-                    <span style="font-size:12px;">Note: Phone number is just to create a account for you.</span>
+                    <span style="font-size:12px;">Note: Phone number is just to create an account for you.</span>
                     <br><br>
                     <button type="submit" id="paybtn" class="btn btn-secondary" onclick="loading()">Pay</button>
                 </form>
@@ -157,7 +157,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <hr>
                         </div>
                     <?php endforeach; ?>
-                    <p style="color:red; font-size:12px;">Note: This subscription is can only be used on this device</p>
+                    <p style="color:red; font-size:12px;">Note: This subscription is can only be used on this device.</p>
+                    <p style="color:red; font-size:12px;">Note: Do not share your hotspot with any other device, else both you and them would be blocked</p>
                 </div>
 
             <?php endif; ?>

@@ -17,31 +17,25 @@ const CHECK_API = "http://192.168.200.1:8080/newdichlan/ansofra/api/checkpaid"; 
 // Cache
 let arpCache = {};
 
-// ────────────────────────────────────────────────
-// BLOCK DEVICE (NO INTERNET)
-// ────────────────────────────────────────────────
-function blockDevice(ip) {
 
-  // Drop all forwarding traffic
-  exec(`iptables -C FORWARD -s ${ip} -j DROP || \
-        iptables -A FORWARD -s ${ip} -j DROP`);
-
-  console.log(`BLOCKED → ${ip}`);
+//Block and unblock
+async function blockDevice(ip) {
+    exec(`iptables -C FORWARD -s ${ip} -j DROP || iptables -A FORWARD -s ${ip} -j DROP`, (err) => {
+        if (err) console.error(`Error blocking ${ip}:`, err.message);
+        else console.log(`BLOCKED → ${ip}`);
+    });
 }
 
-// ────────────────────────────────────────────────
-// UNBLOCK DEVICE (FULL INTERNET)
-// ────────────────────────────────────────────────
-function unblockDevice(ip) {
+async function unblockDevice(ip) {
+    exec(`iptables -D FORWARD -s ${ip} -j DROP || true`, (err) => {
+        if (err) console.error(`Error removing DROP for ${ip}:`, err.message);
+    });
 
-  // Remove DROP rule
-  exec(`iptables -D FORWARD -s ${ip} -j DROP || true`);
-
-  // Allow forwarding to internet
-  exec(`iptables -C FORWARD -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT || \
-        iptables -I FORWARD 1 -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT`);
-
-  console.log(`UNBLOCKED → ${ip}`);
+    exec(`iptables -C FORWARD -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT || \
+          iptables -I FORWARD 1 -s ${ip} -i ${DOWNSTREAM_IFACE} -o ${UPSTREAM_IFACE} -j ACCEPT`, (err) => {
+        if (err) console.error(`Error allowing ${ip}:`, err.message);
+        else console.log(`UNBLOCKED → ${ip}`);
+    });
 }
 
 // ────────────────────────────────────────────────
@@ -60,7 +54,7 @@ setInterval(() => {
       }
     });
   });
-}, 5000);
+}, 10000);
 
 // ────────────────────────────────────────────────
 // SUBSCRIPTION CHECK LOOP
@@ -76,7 +70,7 @@ setInterval(async () => {
 
     try {
       const res = await axios.get(
-        `${CHECK_API}?mac=${encodeURIComponent(mac)}&time=${Date.now()}`
+        `${CHECK_API}?mac=${encodeURIComponent(mac)}&time=${Math.floor(Date.now()/1000)}`
       );
 
       const { sub_status } = res.data;

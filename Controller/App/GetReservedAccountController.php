@@ -7,6 +7,55 @@ use NewdichApp\Query\GetReservedAccount;
 
 header('Content-Type: application/json');
 
+// ===== GET INPUT (JSON FIRST) =====
+$incoming = json_decode(file_get_contents("php://input"), true);
+
+// fallback to POST
+if (!is_array($incoming) || empty($incoming)) {
+    $incoming = $_POST ?? [];
+}
+
+// ===== CLEAN INPUT =====
+$middleware = new Index();
+$cleanData = [];
+
+foreach ($incoming as $k => $v) {
+    $cleanData[$k] = ($k === "password")
+        ? $middleware->hashData($v)
+        : $middleware->cleanData($v);
+}
+
+try {
+    $dto = new AnsofraDto($cleanData);
+    $service = new GetReservedAccount($dto);
+
+    $result = $service->process();
+
+    echo json_encode($result);
+
+} catch (\Throwable $e) {
+    echo json_encode([
+        "status" => "failed",
+        "response" => "Server error",
+        "error" => $e->getMessage()
+    ]);
+}
+
+exit;
+?>
+
+
+
+<?php
+/*
+namespace NewdichControllerApp;
+
+use NewdichDto\AnsofraDto;
+use NewdichMiddleware\Index;
+use NewdichApp\Query\GetReservedAccount;
+
+header('Content-Type: application/json');
+
 // ===== GET INPUT =====
 $incoming = $_POST;
 
@@ -44,5 +93,5 @@ try {
 }
 
 exit;
-
+*/
 ?>

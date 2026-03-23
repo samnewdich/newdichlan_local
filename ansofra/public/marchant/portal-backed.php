@@ -7,30 +7,22 @@ function postRequest($url, $data = [])
 {
     $ch = curl_init($url);
 
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_POSTFIELDS => json_encode($data),
-        CURLOPT_TIMEOUT => 30
-    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 
     $response = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        error_log("CURL ERROR: " . curl_error($ch));
-    }
-
     curl_close($ch);
 
     return json_decode($response, true);
 }
 
 // ===== GET URL PARAMS =====
-$mac = strtolower(trim($_GET['mac'] ?? ''));
+$mac = $_GET['mac'] ?? '';
 $ip = $_GET['ip'] ?? '';
 $device = $_GET['device'] ?? '';
-$current_time = $_GET['current_time'] ?? date("Y-m-d H:i:s");
+$current_time = $_GET['current_time'] ?? '';
 
 // ===== LOAD PLANS =====
 $plansData = postRequest("$BASE/getplans");
@@ -40,44 +32,60 @@ $selectedPlan = null;
 $accounts = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ?>
+    <script>
+        document.getElementById("plan-containner").innerHTML=`
+            <div style="text-align:center;"><img src="/newdichlan/ansofra/public/marchant/loader.gif" style="max-width:50px; max-height:50px;" /></div>
+        `;
+    </script>
+    <?php
+    $plans_id = $_POST['plans_id'];
 
-    $plans_id = $_POST['plans_id'] ?? '';
-    $phone = htmlspecialchars($_POST["phone"] ?? '');
-
-    // ===== REGISTER BODY =====
     $body = [
         "mac" => $mac,
         "last_ip" => $ip,
         "device_name" => $device,
         "date_created" => $current_time,
         "current_time" => $current_time,
-        "phone" => $phone
+        "phone" => htmlspecialchars($_POST["phone"])
     ];
 
-    // ===== TRY REGISTER =====
+    // Try register
     $register = postRequest("$BASE/register", $body);
 
-    if ($register && $register['status'] === "success") {
+    /*if ($register['status'] === "success") {
         $accounts = $register['response'];
     } else {
-        // ===== FALLBACK TO GET RESERVED =====
-        $login = postRequest("$BASE/getreserved", [
-            "mac" => $mac
-        ]);
+        // fallback
+        $login = postRequest("$BASE/getreserved", ["mac" => $mac]);
+        if ($login['status'] === "success") {
+            $accounts = $login['response'];
+        }
+    }
+    */
+
+    if ($register['status'] === "success") {
+        $accounts = $register['response'];
+    } else {
+        $login = postRequest("$BASE/getreserved", ["mac" => $mac]);
 
         if ($login && $login['status'] === "success") {
             $accounts = $login['response'];
-        } else {
-            error_log("GET RESERVED FAILED: " . json_encode($login));
         }
     }
 
-    // ===== GET SELECTED PLAN =====
+    // Get selected plan
     $planRes = postRequest("$BASE/geteachplans", ["plans_id" => $plans_id]);
 
-    if ($planRes && $planRes['status'] === "success") {
-        $selectedPlan = $planRes['response'][0] ?? null;
+    if ($planRes['status'] === "success") {
+        $selectedPlan = $planRes['response'][0];
     }
+
+    ?>
+    <script>
+        document.getElementById("plan-containner").innerHTML=``;
+    </script>
+    <?php
 }
 ?>
 

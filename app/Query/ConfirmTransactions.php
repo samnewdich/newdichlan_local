@@ -24,14 +24,13 @@ class ConfirmTransactions {
             "marchant_code" => $this->marchant_code
         ];
 
-        // ===== CALL API =====
         $ch = curl_init();
 
         curl_setopt_array($ch, [
             CURLOPT_URL => "https://lan.newdich.tech/api/confirmtransactions",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
-            CURLOPT_TIMEOUT => 10, // IMPORTANT
+            CURLOPT_TIMEOUT => 15,
             CURLOPT_HTTPHEADER => [
                 "Content-Type: application/json"
             ],
@@ -40,11 +39,16 @@ class ConfirmTransactions {
 
         $response = curl_exec($ch);
         $err = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         curl_close($ch);
 
         if ($err) {
             return $this->fail("cURL Error: " . $err);
+        }
+
+        if ($httpCode !== 200) {
+            return $this->fail("HTTP Error: " . $httpCode);
         }
 
         $res = json_decode($response, true);
@@ -54,10 +58,9 @@ class ConfirmTransactions {
         }
 
         if ($res["status"] !== "success") {
-            return $res; // pass-through
+            return $res;
         }
 
-        // FIXED: correct structure
         $users = $res["response"]["users"] ?? [];
 
         if (empty($users)) {
@@ -70,7 +73,10 @@ class ConfirmTransactions {
 
         foreach ($users as $user) {
 
-            // safer condition (primary identity)
+            if (empty($user["hashed_mac"])) {
+                continue;
+            }
+
             $condition = [
                 "hashed_mac" => $user["hashed_mac"],
                 "marchant_code" => $this->marchant_code
@@ -83,7 +89,6 @@ class ConfirmTransactions {
             ];
 
             $edit = $migration->edit($dataToUpdate, $condition);
-
             $editDec = json_decode($edit, true);
 
             if ($this->isValid($editDec) && $editDec["status"] === "success") {
@@ -96,8 +101,6 @@ class ConfirmTransactions {
             "updated_successfully" => $updated
         ]);
     }
-
-    // ===== HELPERS =====
 
     private function success($data): array {
         return [
@@ -117,5 +120,4 @@ class ConfirmTransactions {
         return is_array($data) && isset($data["status"]);
     }
 }
-
 ?>
